@@ -24,6 +24,7 @@ CRITS_JSON_API_KEY = "api_key"
 CRITS_JSON_BASE_URL = "url"
 CRITS_JSON_RESOURCE = "resource"
 CRITS_JSON_ID = "id"
+CRIT_JSON_NEXT_PAGE = "next_page"
 
 CRITS_ERR_API_UNSUPPORTED_METHOD = "Unsupported method: {method} called"
 CRITS_ERR_SERVER_CONNECTION = "Error connecting to server"

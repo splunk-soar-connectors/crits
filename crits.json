@@ -56,11 +56,20 @@
       {
         "action": "run query", 
         "description": "Run a search query on the CRITs device.",
-        "verbose": "CRITs query is made up of multiple instances of key value pairs, much like the parameters that are specified to an HTTP URL. To keep things simple, the action takes as input each parameter and it's value to match as a JSON dictionary (in string form).<br>For example to search for an indicator of value <b>baddomain.com</b>:<ul><li>Set <b>resource</b> parameter to <b>indicators</b></li><li>The <b>query</b> parameter should be set to <b>{ \"c-value\": \"baddomain.com\" }</b></li></ul>To add more values to match just add the required key value pairs to the <b>query</b> dictionary.<br>While orchrestrating this action from the UI, typing the JSON dictionary should suffice.<br>While automating this action from a playbook, if you are creating a dictionary, then you will require to convert it into a JSON string using the json.loads(...) python function before passing it as the value to the <b>query</b> parameter.",
+        "verbose": "CRITs query is made up of multiple instances of key value pairs, much like the parameters that are specified to an HTTP URL. To keep things simple, the action takes as input each parameter and it's value to match as a JSON dictionary (in string form).<br>For example to search for an indicator of value <b>baddomain.com</b>:<ul><li>Set <b>resource</b> parameter to <b>indicators</b></li><li>The <b>query</b> parameter should be set to <b>{ \"c-value\": \"baddomain.com\" }</b></li></ul>To add more values to match just add the required key value pairs to the <b>query</b> dictionary.<br>While orchrestrating this action from the UI, typing the JSON dictionary should suffice.<br>While automating this action from a playbook, if you are creating a dictionary, then you will require to convert it into a JSON string using the json.loads(...) python function before passing it as the value to the <b>query</b> parameter.<br>If the next page URI is present, the other parameters will be ignored. If it isn't present, the resource to query on field must be present.",
         "type": "investigate", 
         "identifier": "run_query",
         "read_only": true, 
         "parameters": {
+          "resource": {
+            "description": "Resource to query on. Required if no Page URI is present", 
+            "data_type": "string",
+            "order": 0,
+            "required": false,
+            "primary": true,
+            "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
+            "contains": [ "crits resource" ]
+          },
           "query": {
             "description": "Query to run", 
             "data_type": "string",
@@ -69,14 +78,23 @@
             "primary": true,
             "contains": [ "crits query" ]
           },
-          "resource": {
-            "description": "Resource to query on", 
+          "limit": {
+            "description": "Results per page",
+            "data_type": "numeric",
+            "order": 2,
+            "required": false
+          },
+          "offset": {
+            "description": "Paging offset",
+            "data_type": "numeric",
+            "order": 3,
+            "required": false
+          },
+          "next_page": {
+            "description": "Next page URI",
             "data_type": "string",
-            "order": 0,
-            "required": true,
-            "primary": true,
-            "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
-            "contains": [ "crits resource" ]
+            "order": 4,
+            "required": false
           }
         }, 
         "render": {

@@ -46,7 +46,7 @@ class CritsConnector(phantom.BaseConnector):
 
         self._base_url = config[consts.CRITS_JSON_BASE_URL].rstrip('/')
 
-        self._base_url += "/api/v1"
+        # self._base_url += "/api/v1"
 
         return phantom.APP_SUCCESS
 
@@ -61,8 +61,8 @@ class CritsConnector(phantom.BaseConnector):
         if (params is None):
             params = dict()
 
-        if (not endpoint.endswith('/')):
-            endpoint += '/'
+        # if (not endpoint.endswith('/')):
+        #     endpoint += '/'
 
         params.update(self._params)
 
@@ -108,19 +108,26 @@ class CritsConnector(phantom.BaseConnector):
 
     def _handle_run_query(self, param):
 
-        resource = param[consts.CRITS_JSON_RESOURCE]
-        query = param.get(consts.CRITS_JSON_QUERY)
-
         action_result = self.add_action_result(phantom.ActionResult(param))
-
-        if (query):
-            # The query is a json
-            try:
-                query = json.loads(query)
-            except Exception as e:
-                return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
-
-        endpoint = "/{0}".format(resource)
+        query = None
+        endpoint = param.get(consts.CRIT_JSON_NEXT_PAGE)
+        # No page URI provided
+        if not endpoint:
+            resource = param.get(consts.CRITS_JSON_RESOURCE)
+            if not resource:
+                return action_result.set_status(phantom.APP_ERROR, "Parameter 'resource' is required")
+            query = param.get(consts.CRITS_JSON_QUERY)
+            if (query):
+                # The query is a json
+                try:
+                    query = json.loads(query)
+                except Exception as e:
+                    return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
+            else:
+                query = {}
+            query['offset'] = int(param.get('offset', 0))
+            query['limit'] = int(param.get('limit', 0))
+            endpoint = "/api/v1/{0}/".format(resource)
 
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result, params=query)
@@ -129,8 +136,11 @@ class CritsConnector(phantom.BaseConnector):
             return action_result.get_data()
 
         total_count = response.get('meta', {}).get('total_count', 0)
+        next_page = response.get('meta', {}).get('next')
 
         action_result.update_summary({'total_results': total_count})
+        if next_page:
+            action_result.update_summary({'next_page': next_page})
 
         objects = response.get('objects')
 
@@ -146,7 +156,7 @@ class CritsConnector(phantom.BaseConnector):
 
         action_result = self.add_action_result(phantom.ActionResult(param))
 
-        endpoint = "/{0}/{1}".format(resource, res_id)
+        endpoint = "/api/v1/{0}/{1}/".format(resource, res_id)
 
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result)
@@ -164,7 +174,7 @@ class CritsConnector(phantom.BaseConnector):
         self.save_progress(consts.CRITS_USING_BASE_URL, base_url=self._base_url)
 
         # set the endpoint
-        endpoint = '/indicators'
+        endpoint = '/api/v1/indicators/'
 
         # Action result to represent the call
         action_result = phantom.ActionResult(param)
