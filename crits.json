@@ -56,11 +56,20 @@
       {
         "action": "run query", 
         "description": "Run a search query on the CRITs device.",
-        "verbose": "CRITs query is made up of multiple instances of key value pairs, much like the parameters that are specified to an HTTP URL. To keep things simple, the action takes as input each parameter and it's value to match as a JSON dictionary (in string form).<br>For example to search for an indicator of value <b>baddomain.com</b>:<ul><li>Set <b>resource</b> parameter to <b>indicators</b></li><li>The <b>query</b> parameter should be set to <b>{ \"c-value\": \"baddomain.com\" }</b></li></ul>To add more values to match just add the required key value pairs to the <b>query</b> dictionary.<br>While orchrestrating this action from the UI, typing the JSON dictionary should suffice.<br>While automating this action from a playbook, if you are creating a dictionary, then you will require to convert it into a JSON string using the json.loads(...) python function before passing it as the value to the <b>query</b> parameter.",
+        "verbose": "CRITs query is made up of multiple instances of key value pairs, much like the parameters that are specified to an HTTP URL. To keep things simple, the action takes as input each parameter and it's value to match as a JSON dictionary (in string form).<br>For example to search for an indicator of value <b>baddomain.com</b>:<ul><li>Set <b>resource</b> parameter to <b>indicators</b></li><li>The <b>query</b> parameter should be set to <b>{ \"c-value\": \"baddomain.com\" }</b></li></ul>To add more values to match just add the required key value pairs to the <b>query</b> dictionary.<br>While orchrestrating this action from the UI, typing the JSON dictionary should suffice.<br>While automating this action from a playbook, if you are creating a dictionary, then you will require to convert it into a JSON string using the json.loads(...) python function before passing it as the value to the <b>query</b> parameter.<br>If the next page URI is present, the other parameters will be ignored. If it isn't present, the resource to query on field must be present.",
         "type": "investigate", 
         "identifier": "run_query",
         "read_only": true, 
         "parameters": {
+          "resource": {
+            "description": "Resource to query on. Required if no Page URI is present", 
+            "data_type": "string",
+            "order": 0,
+            "required": false,
+            "primary": true,
+            "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
+            "contains": [ "crits resource" ]
+          },
           "query": {
             "description": "Query to run", 
             "data_type": "string",
@@ -69,14 +78,23 @@
             "primary": true,
             "contains": [ "crits query" ]
           },
-          "resource": {
-            "description": "Resource to query on", 
+          "limit": {
+            "description": "Results per page",
+            "data_type": "numeric",
+            "order": 2,
+            "required": false
+          },
+          "offset": {
+            "description": "Paging offset",
+            "data_type": "numeric",
+            "order": 3,
+            "required": false
+          },
+          "next_page": {
+            "description": "Next page URI",
             "data_type": "string",
-            "order": 0,
-            "required": true,
-            "primary": true,
-            "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
-            "contains": [ "crits resource" ]
+            "order": 4,
+            "required": false
           }
         }, 
         "render": {
@@ -89,11 +107,15 @@
           {
             "data_path": "action_result.data.*._id",
             "data_type": "string",
-            "contains": ["crits resource id"]
+            "contains": ["crits resource id"],
+            "column_name": "ID",
+            "column_irder": 0
           },
           {
             "data_path": "action_result.data.*.type",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Type",
+            "column_irder": 1
           },
           {
             "data_path": "action_result.data.*.lower",
@@ -137,7 +159,9 @@
           },
           {
             "data_path": "action_result.data.*.created",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Created",
+            "column_irder": 2
           },
           {
             "data_path": "action_result.data.*.campaign.*.date",
@@ -242,6 +266,18 @@
             "contains": ["crits query"]
           },
           {
+            "data_path": "action_result.parameter.limit",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.parameter.offset",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.parameter.next_page",
+            "data_type": "string"
+          },
+          {
             "data_path": "summary.total_objects",
             "data_type": "numeric"
           },
@@ -263,7 +299,7 @@
             "description": "Resource ID to get", 
             "data_type": "string",
             "order": 1,
-            "required": false,
+            "required": true,
             "primary": true,
             "contains": [ "crits resource id" ]
           },
@@ -286,11 +322,16 @@
         "output": [
           {
             "data_path": "action_result.data.*._id",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "ID",
+            "column_order": 0,
+            "contains": ["crits resource id"]
           },
           {
             "data_path": "action_result.data.*.type",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Type",
+            "column_irder": 1
           },
           {
             "data_path": "action_result.data.*.lower",
@@ -334,7 +375,9 @@
           },
           {
             "data_path": "action_result.data.*.created",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Created",
+            "column_order": 2
           },
           {
             "data_path": "action_result.data.*.campaign.*.date",
@@ -413,6 +456,10 @@
             "data_type": "string"
           },
           {
+            "data_path": "action_result.summary",
+            "data_type": "string"
+          },
+          {
             "data_path": "action_result.data.*.schema_version",
             "data_type": "numeric"
           },
@@ -441,6 +488,134 @@
           {
             "data_path": "summary.total_objects_successful",
             "data_type": "numeric"
+          }
+        ],
+        "versions": "EQ(*)"
+      },
+      {
+        "action": "update resource",
+        "description": "Update a specified resource",
+        "verbose": "The <b>patch_data</b> field expects a json string which will be accepted by the action handler. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>, in the sections pertaining to updating TLOs using PATCH", 
+        "type": "correct", 
+        "identifier": "update_resource",
+        "read_only": true,
+        "parameters": {
+          "id": {
+            "description": "Resource ID to get", 
+            "data_type": "string",
+            "order": 1,
+            "required": true,
+            "primary": true,
+            "contains": [ "crits resource id" ]
+          },
+          "resource": {
+            "description": "Resource to get", 
+            "data_type": "string",
+            "order": 0,
+            "required": true,
+            "primary": true,
+            "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
+            "contains": [ "crits resource" ]
+          },
+          "patch_data": {
+            "description": "Update JSON Data",
+            "data_type": "string",
+            "order": 2,
+            "required": true
+          }
+        },
+        "render": {
+          "width": 12,
+          "title": "Update Resource",
+          "type": "table",
+          "height": 5
+        },
+        "output": [
+          {
+            "data_path": "action_result.data.*.id",
+            "data_type": "string",
+            "example_values": [
+              "594314afe1c1dc600ae3611f"
+            ],
+            "contains": ["crits resource id"],
+            "column_name": "ID",
+            "column_order": 0
+          },
+          {
+            "data_path": "action_result.data.*.type",
+            "data_type": "string",
+            "example_values": [
+              "Event"
+            ]
+          },
+          {
+            "data_path": "action_result.data.*.message",
+            "data_type": "string",
+            "example_values": [
+              "success!"
+            ],
+            "column_name": "Message",
+            "column_order": 1
+          },
+          {
+            "data_path": "action_result.data.*.return_code",
+            "data_type": "numeric",
+            "example_values": [
+              "0"
+            ]
+          },
+          {
+            "data_path": "action_result.status",
+            "data_type": "string",
+            "example_values": [
+              "success"
+            ]
+          },
+          {
+            "data_path": "action_result.message",
+            "data_type": "string",
+            "example_values": [
+              ""
+            ]
+          },
+          {
+            "data_path": "action_result.parameter.id",
+            "data_type": "string",
+            "example_values": [
+              "594314afe1c1dc600ae3611f"
+            ],
+            "contains": [ "crits resource id" ]
+          },
+          {
+            "data_path": "action_result.parameter.resource",
+            "data_type": "string",
+            "example_values": [
+              "events"
+            ],
+            "contains": [ "crits resource" ]
+          },
+          {
+            "data_path": "action_result.parameter.patch_data",
+            "data_type": "string",
+            "example_values": []
+          },
+          {
+            "data_path": "action_result.summary",
+            "data_type": "string"
+          },
+          {
+            "data_path": "summary.total_objects",
+            "data_type": "numeric",
+            "example_values": [
+              "1"
+            ]
+          },
+          {
+            "data_path": "summary.total_objects_successful",
+            "data_type": "numeric",
+            "example_values": [
+              "1"
+            ]
           }
         ],
         "versions": "EQ(*)"
