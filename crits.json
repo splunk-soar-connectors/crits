@@ -299,7 +299,7 @@
             "description": "Resource ID to get", 
             "data_type": "string",
             "order": 1,
-            "required": false,
+            "required": true,
             "primary": true,
             "contains": [ "crits resource id" ]
           },
@@ -495,7 +495,7 @@
       {
         "action": "update resource",
         "description": "Update a specified resource",
-        "verbose": "The <b>patch_data</b> field  expects a json string which will accepted by the action handler. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>, in the sections pertaining to updating TLOs using PATCH", 
+        "verbose": "The <b>patch_data</b> field expects a json string which will be accepted by the action handler. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>, in the sections pertaining to updating TLOs using PATCH", 
         "type": "correct", 
         "identifier": "update_resource",
         "read_only": true,
@@ -504,7 +504,7 @@
             "description": "Resource ID to get", 
             "data_type": "string",
             "order": 1,
-            "required": false,
+            "required": true,
             "primary": true,
             "contains": [ "crits resource id" ]
           },

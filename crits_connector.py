@@ -47,8 +47,6 @@ class CritsConnector(phantom.BaseConnector):
 
         self._base_url = config[consts.CRITS_JSON_BASE_URL].rstrip('/')
 
-        # self._base_url += "/api/v1"
-
         return phantom.APP_SUCCESS
 
     def _make_rest_call(self, endpoint, action_result, params=None, data=None, method="get"):
@@ -65,9 +63,6 @@ class CritsConnector(phantom.BaseConnector):
         headers = {
             'Content-Type': 'application/json'
         }
-
-        # if (not endpoint.endswith('/')):
-        #     endpoint += '/'
 
         params.update(self._params)
 
