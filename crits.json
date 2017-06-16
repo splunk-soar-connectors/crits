@@ -107,11 +107,15 @@
           {
             "data_path": "action_result.data.*._id",
             "data_type": "string",
-            "contains": ["crits resource id"]
+            "contains": ["crits resource id"],
+            "column_name": "ID",
+            "column_irder": 0
           },
           {
             "data_path": "action_result.data.*.type",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Type",
+            "column_irder": 1
           },
           {
             "data_path": "action_result.data.*.lower",
@@ -155,7 +159,9 @@
           },
           {
             "data_path": "action_result.data.*.created",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Created",
+            "column_irder": 2
           },
           {
             "data_path": "action_result.data.*.campaign.*.date",
@@ -316,11 +322,16 @@
         "output": [
           {
             "data_path": "action_result.data.*._id",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "ID",
+            "column_order": 0,
+            "contains": ["crits resource id"]
           },
           {
             "data_path": "action_result.data.*.type",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Type",
+            "column_irder": 1
           },
           {
             "data_path": "action_result.data.*.lower",
@@ -364,7 +375,9 @@
           },
           {
             "data_path": "action_result.data.*.created",
-            "data_type": "string"
+            "data_type": "string",
+            "column_name": "Created",
+            "column_order": 2
           },
           {
             "data_path": "action_result.data.*.campaign.*.date",
@@ -482,6 +495,7 @@
       {
         "action": "update resource",
         "description": "Update a specified resource",
+        "verbose": "The <b>patch_data</b> field  expects a json string which will accepted by the action handler. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>, in the sections pertaining to updating TLOs using PATCH", 
         "type": "correct", 
         "identifier": "update_resource",
         "read_only": true,
@@ -522,7 +536,10 @@
             "data_type": "string",
             "example_values": [
               "594314afe1c1dc600ae3611f"
-            ]
+            ],
+            "contains": ["crits resource id"],
+            "column_name": "ID",
+            "column_order": 0
           },
           {
             "data_path": "action_result.data.*.type",
@@ -536,7 +553,9 @@
             "data_type": "string",
             "example_values": [
               "success!"
-            ]
+            ],
+            "column_name": "Message",
+            "column_order": 1
           },
           {
             "data_path": "action_result.data.*.return_code",
