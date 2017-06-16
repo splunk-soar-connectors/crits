@@ -28,6 +28,7 @@ class CritsConnector(phantom.BaseConnector):
 
     ACTION_ID_RUN_QUERY = "run_query"
     ACTION_ID_GET_RESOURCE = "get_resource"
+    ACTION_ID_UPDATE_RESOURCE = "update_resource"
 
     def __init__(self):
 
@@ -61,6 +62,10 @@ class CritsConnector(phantom.BaseConnector):
         if (params is None):
             params = dict()
 
+        headers = {
+            'Content-Type': 'application/json'
+        }
+
         # if (not endpoint.endswith('/')):
         #     endpoint += '/'
 
@@ -69,19 +74,23 @@ class CritsConnector(phantom.BaseConnector):
         # get or post or put, whatever the caller asked us to use, if not specified the default will be 'get'
         request_func = getattr(requests, method)
 
+        self.debug_print(data)
+
         # handle the error in case the caller specified a non-existant method
         if (not request_func):
             action_result.set_status(phantom.APP_ERROR, consts.CRITS_ERR_API_UNSUPPORTED_METHOD.format(method=method))
 
         # Make the call
         try:
-            r = request_func(self._base_url + endpoint, verify=config[phantom.APP_JSON_VERIFY], params=params)
+            r = request_func(self._base_url + endpoint, verify=config[phantom.APP_JSON_VERIFY],
+                             params=params, json=data, headers=headers)
         except Exception as e:
             return (action_result.set_status(phantom.APP_ERROR, consts.CRITS_ERR_SERVER_CONNECTION, e), resp_json)
 
         # self.debug_print('REST url: {0}'.format(r.url))
 
-        # Try a json parse, since most REST API's give back the data in json, if the device does not return JSONs, then need to implement parsing them some other manner
+        # Try a json parse, since most REST API's give back the data in json, if the device does not return JSONs,
+        #  then need to implement parsing them some other manner
         try:
             resp_json = r.json()
         except Exception as e:
@@ -110,7 +119,7 @@ class CritsConnector(phantom.BaseConnector):
 
         action_result = self.add_action_result(phantom.ActionResult(param))
         query = None
-        endpoint = param.get(consts.CRIT_JSON_NEXT_PAGE)
+        endpoint = param.get(consts.CRITS_JSON_NEXT_PAGE)
         # No page URI provided
         if not endpoint:
             resource = param.get(consts.CRITS_JSON_RESOURCE)
@@ -160,6 +169,30 @@ class CritsConnector(phantom.BaseConnector):
 
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result)
+
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_data()
+
+        action_result.add_data(response)
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _update_resource(self, param):
+
+        action_result = self.add_action_result(phantom.ActionResult(param))
+
+        resource = param[consts.CRITS_JSON_RESOURCE]
+        res_id = param[consts.CRITS_JSON_ID]
+        data_str = param[consts.CRITS_JSON_PATCH_DATA]
+
+        try:
+            data = json.loads(data_str)
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
+
+        endpoint = "/api/v1/{0}/{1}/".format(resource, res_id)
+
+        ret_val, response = self._make_rest_call(endpoint, action_result, data=data, method="patch")
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_data()
@@ -228,6 +261,8 @@ class CritsConnector(phantom.BaseConnector):
             result = self._handle_run_query(param)
         elif (action == self.ACTION_ID_GET_RESOURCE):
             result = self._get_resource(param)
+        elif (action == self.ACTION_ID_UPDATE_RESOURCE):
+            result = self._update_resource(param)
         elif (action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
             result = self._test_asset_connectivity(param)
 
