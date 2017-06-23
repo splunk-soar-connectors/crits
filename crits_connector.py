@@ -14,6 +14,8 @@
 
 # Phantom imports
 import phantom.app as phantom
+from phantom.action_result import ActionResult
+from phantom.app import BaseConnector
 
 # THIS Connector imports
 import crits_consts as consts
@@ -24,11 +26,12 @@ import requests
 requests.packages.urllib3.disable_warnings()
 
 
-class CritsConnector(phantom.BaseConnector):
+class CritsConnector(BaseConnector):
 
     ACTION_ID_RUN_QUERY = "run_query"
     ACTION_ID_GET_RESOURCE = "get_resource"
     ACTION_ID_UPDATE_RESOURCE = "update_resource"
+    ACTION_ID_CREATE_RESOURCE = "create_resource"
 
     def __init__(self):
 
@@ -112,7 +115,7 @@ class CritsConnector(phantom.BaseConnector):
 
     def _handle_run_query(self, param):
 
-        action_result = self.add_action_result(phantom.ActionResult(param))
+        action_result = self.add_action_result(ActionResult(param))
         query = None
         endpoint = param.get(consts.CRITS_JSON_NEXT_PAGE)
         # No page URI provided
@@ -158,7 +161,7 @@ class CritsConnector(phantom.BaseConnector):
         resource = param[consts.CRITS_JSON_RESOURCE]
         res_id = param[consts.CRITS_JSON_ID]
 
-        action_result = self.add_action_result(phantom.ActionResult(param))
+        action_result = self.add_action_result(ActionResult(param))
 
         endpoint = "/api/v1/{0}/{1}/".format(resource, res_id)
 
@@ -174,7 +177,7 @@ class CritsConnector(phantom.BaseConnector):
 
     def _update_resource(self, param):
 
-        action_result = self.add_action_result(phantom.ActionResult(param))
+        action_result = self.add_action_result(ActionResult(param))
 
         resource = param[consts.CRITS_JSON_RESOURCE]
         res_id = param[consts.CRITS_JSON_ID]
@@ -192,6 +195,46 @@ class CritsConnector(phantom.BaseConnector):
         if (phantom.is_fail(ret_val)):
             return action_result.get_data()
 
+        msg = response.get('message', '')
+        if 'success' not in msg.lower():
+            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(msg))
+
+        action_result.add_data(response)
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _create_resource(self, param):
+        action_result = self.add_action_result(ActionResult(param))
+
+        source = param[consts.CRITS_JSON_SOURCE]
+        resource = param[consts.CRITS_JSON_RESOURCE]
+        data_str = param.get(consts.CRITS_JSON_POST_DATA)
+        confidence = param.get(consts.CRITS_JSON_CONFIDENCE, 'low')
+
+        data = {}
+        data['source'] = source
+        data['confidence'] = confidence
+
+        if data_str:
+            try:
+                add_data = json.loads(data_str)
+                data.update(add_data)
+            except Exception as e:
+                return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
+
+        endpoint = "/api/v1/{0}/".format(resource)
+
+        ret_val, response = self._make_rest_call(endpoint, action_result, data=data, method="post")
+
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_data()
+
+        # There is a response_code variable in the dict, but it will return 0 when it both fails
+        # and succeeds, so we do this instead
+        msg = response.get('message', '')
+        if 'success' not in msg.lower():
+            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(msg))
+
         action_result.add_data(response)
 
         return action_result.set_status(phantom.APP_SUCCESS)
@@ -205,7 +248,7 @@ class CritsConnector(phantom.BaseConnector):
         endpoint = '/api/v1/indicators/'
 
         # Action result to represent the call
-        action_result = phantom.ActionResult(param)
+        action_result = ActionResult()
 
         # Progress message, since it is test connectivity, it pays to be verbose
         self.save_progress(consts.CRITS_MSG_GET_INDICATORS_TEST)
@@ -258,6 +301,8 @@ class CritsConnector(phantom.BaseConnector):
             result = self._get_resource(param)
         elif (action == self.ACTION_ID_UPDATE_RESOURCE):
             result = self._update_resource(param)
+        elif (action == self.ACTION_ID_CREATE_RESOURCE):
+            result = self._create_resource(param)
         elif (action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
             result = self._test_asset_connectivity(param)
 
