@@ -96,7 +96,6 @@
           "order": 4,
           "required": false
         }
-        >>>>>>> Stashed changes
       }, 
       "render": {
         "type": "json",
@@ -627,7 +626,7 @@
     {
       "action": "create resource",
       "description": "Create a resource",
-      "verbose": "All resources expect different fields, save a few common fields. The <b>post_data</b> field expects a JSON string. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>. Each resource has a section outlining it's specific fields",
+      "verbose": "All resources expect different fields, save a few common fields. The <b>post_data</b> field expects a JSON string. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>. Each resource has a section outlining it's specific fields.</br>If no confidence is specified, it will default to \"low\"",
       "type": "generic",
       "identifier": "create_resource",
       "read_only": true,
@@ -648,7 +647,7 @@
           "order": 1
         },
         "confidence": {
-          "description": "Confidence (Defaults to \"low\")",
+          "description": "Confidence",
           "data_type": "string",
           "required": false,
           "value_list": [ "low", "medium", "high" ],
