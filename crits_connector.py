@@ -14,21 +14,30 @@
 
 # Phantom imports
 import phantom.app as phantom
+from phantom.action_result import ActionResult
+from phantom.app import BaseConnector
 
 # THIS Connector imports
 import crits_consts as consts
 
 import json
 import requests
+from bs4 import BeautifulSoup
 
 requests.packages.urllib3.disable_warnings()
 
 
-class CritsConnector(phantom.BaseConnector):
+class RetVal(tuple):
+    def __new__(cls, val1, val2):
+        return tuple.__new__(RetVal, (val1, val2))
+
+
+class CritsConnector(BaseConnector):
 
     ACTION_ID_RUN_QUERY = "run_query"
     ACTION_ID_GET_RESOURCE = "get_resource"
     ACTION_ID_UPDATE_RESOURCE = "update_resource"
+    ACTION_ID_CREATE_RESOURCE = "create_resource"
 
     def __init__(self):
 
@@ -49,70 +58,98 @@ class CritsConnector(phantom.BaseConnector):
 
         return phantom.APP_SUCCESS
 
-    def _make_rest_call(self, endpoint, action_result, params=None, data=None, method="get"):
-        """ Function that makes the REST call to the device, generic function that can be called from various action handlers"""
+    def _process_empty_reponse(self, response, action_result):
+        return RetVal(action_result.set_status(phantom.APP_ERROR), None)
 
-        # Get the config
-        config = self.get_config()
+    def _process_html_response(self, response, action_result):
 
-        resp_json = None
+        # An html response, is bound to be an error
+        status_code = response.status_code
 
-        if (params is None):
-            params = dict()
-
-        headers = {
-            'Content-Type': 'application/json'
-        }
-
-        params.update(self._params)
-
-        # get or post or put, whatever the caller asked us to use, if not specified the default will be 'get'
-        request_func = getattr(requests, method)
-
-        self.debug_print(data)
-
-        # handle the error in case the caller specified a non-existant method
-        if (not request_func):
-            action_result.set_status(phantom.APP_ERROR, consts.CRITS_ERR_API_UNSUPPORTED_METHOD.format(method=method))
-
-        # Make the call
         try:
-            r = request_func(self._base_url + endpoint, verify=config[phantom.APP_JSON_VERIFY],
-                             params=params, json=data, headers=headers)
-        except Exception as e:
-            return (action_result.set_status(phantom.APP_ERROR, consts.CRITS_ERR_SERVER_CONNECTION, e), resp_json)
+            soup = BeautifulSoup(response.text, "html.parser")
+            error_text = soup.text
+            split_lines = error_text.split('\n')
+            split_lines = [x.strip() for x in split_lines if x.strip()]
+            error_text = '\n'.join(split_lines)
+        except:
+            error_text = "Cannot parse error details"
 
-        # self.debug_print('REST url: {0}'.format(r.url))
+        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
+                error_text)
 
-        # Try a json parse, since most REST API's give back the data in json, if the device does not return JSONs,
-        #  then need to implement parsing them some other manner
+        message = message.replace('{', '{{').replace('}', '}}')
+
+        return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
+
+    def _process_json_response(self, r, action_result):
+
+        # Try a json parse
         try:
             resp_json = r.json()
         except Exception as e:
-            # r.text is guaranteed to be NON None, it will be empty, but not None
-            msg_string = consts.CRITS_ERR_JSON_PARSE.format(raw_text=r.text)
-            return (action_result.set_status(phantom.APP_ERROR, msg_string, e), resp_json)
+            self.save_progress('Cannot parse JSON')
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse response as JSON", e), None)
 
-        # Handle any special HTTP error codes here, many devices return an HTTP error code like 204. The requests module treats these as error,
-        # so handle them here before anything else, uncomment the following lines in such cases
-        # if (r.status_code == 201):
-        #     return (phantom.APP_SUCCESS, resp_json)
+        if (200 <= r.status_code < 205):
+            return RetVal(phantom.APP_SUCCESS, resp_json)
 
-        # Handle/process any errors that we get back from the device
-        if (200 <= r.status_code <= 399):
-            # Success
-            return (phantom.APP_SUCCESS, resp_json)
-
-        # Failure
         action_result.add_data(resp_json)
+        message = r.text.replace('{', '{{').replace('}', '}}')
+        return RetVal( action_result.set_status( phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
 
-        details = json.dumps(resp_json).replace('{', '').replace('}', '')
+    def _process_response(self, r, action_result):
 
-        return (action_result.set_status(phantom.APP_ERROR, consts.CRITS_ERR_FROM_SERVER.format(status=r.status_code, detail=details)), resp_json)
+        # store the r_text in debug data, it will get dumped in the logs if an error occurs
+        if hasattr(action_result, 'add_debug_data'):
+            action_result.add_debug_data({'r_status_code': r.status_code})
+            action_result.add_debug_data({'r_text': r.text})
+            action_result.add_debug_data({'r_headers': r.headers})
+
+        # There are just too many differences in the response to handle all of them in the same function
+        if ('json' in r.headers.get('Content-Type', '')):
+            return self._process_json_response(r, action_result)
+
+        if ('html' in r.headers.get('Content-Type', '')):
+            return self._process_html_response(r, action_result)
+
+        # it's not an html or json, handle if it is a successfull empty reponse
+        if (200 <= r.status_code < 205) and (not r.text):
+            return self._process_empty_reponse(r, action_result)
+
+        # everything else is actually an error at this point
+        message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
+                r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
+
+        return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
+
+    def _make_rest_call(self, endpoint, action_result, params={}, data={}, headers={}, method="get"):
+        """ Returns 2 values, use RetVal """
+        url = self._base_url + endpoint
+        params.update(self._params)
+
+        try:
+            request_func = getattr(requests, method)
+        except AttributeError:
+            # Set the action_result status to error, the handler function will most probably return as is
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unsupported method: {0}".format(method)), None)
+        except Exception as e:
+            # Set the action_result status to error, the handler function will most probably return as is
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(str(e))), None)
+
+        try:
+            response = request_func(url, params=params, json=data, headers=headers)
+        except Exception as e:
+            # Set the action_result status to error, the handler function will most probably return as is
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error connecting: {0}".format(str(e))), None)
+
+        self.debug_print(response.url)
+
+        return self._process_response(response, action_result)
 
     def _handle_run_query(self, param):
 
-        action_result = self.add_action_result(phantom.ActionResult(param))
+        action_result = self.add_action_result(ActionResult(param))
         query = None
         endpoint = param.get(consts.CRITS_JSON_NEXT_PAGE)
         # No page URI provided
@@ -158,7 +195,7 @@ class CritsConnector(phantom.BaseConnector):
         resource = param[consts.CRITS_JSON_RESOURCE]
         res_id = param[consts.CRITS_JSON_ID]
 
-        action_result = self.add_action_result(phantom.ActionResult(param))
+        action_result = self.add_action_result(ActionResult(param))
 
         endpoint = "/api/v1/{0}/{1}/".format(resource, res_id)
 
@@ -174,7 +211,7 @@ class CritsConnector(phantom.BaseConnector):
 
     def _update_resource(self, param):
 
-        action_result = self.add_action_result(phantom.ActionResult(param))
+        action_result = self.add_action_result(ActionResult(param))
 
         resource = param[consts.CRITS_JSON_RESOURCE]
         res_id = param[consts.CRITS_JSON_ID]
@@ -192,6 +229,46 @@ class CritsConnector(phantom.BaseConnector):
         if (phantom.is_fail(ret_val)):
             return action_result.get_data()
 
+        msg = response.get('message', '')
+        if 'success' not in msg.lower():
+            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(msg))
+
+        action_result.add_data(response)
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _create_resource(self, param):
+        action_result = self.add_action_result(ActionResult(param))
+
+        source = param[consts.CRITS_JSON_SOURCE]
+        resource = param[consts.CRITS_JSON_RESOURCE]
+        data_str = param.get(consts.CRITS_JSON_POST_DATA)
+        confidence = param.get(consts.CRITS_JSON_CONFIDENCE, 'low')
+
+        data = {}
+        data['source'] = source
+        data['confidence'] = confidence
+
+        if data_str:
+            try:
+                add_data = json.loads(data_str)
+                data.update(add_data)
+            except Exception as e:
+                return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
+
+        endpoint = "/api/v1/{0}/".format(resource)
+
+        ret_val, response = self._make_rest_call(endpoint, action_result, data=data, method="post")
+
+        if (phantom.is_fail(ret_val)):
+            return action_result.get_data()
+
+        # There is a response_code variable in the dict, but it will return 0 when it both fails
+        # and succeeds, so we do this instead
+        msg = response.get('message', '')
+        if 'success' not in msg.lower():
+            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(msg))
+
         action_result.add_data(response)
 
         return action_result.set_status(phantom.APP_SUCCESS)
@@ -205,7 +282,7 @@ class CritsConnector(phantom.BaseConnector):
         endpoint = '/api/v1/indicators/'
 
         # Action result to represent the call
-        action_result = phantom.ActionResult(param)
+        action_result = ActionResult()
 
         # Progress message, since it is test connectivity, it pays to be verbose
         self.save_progress(consts.CRITS_MSG_GET_INDICATORS_TEST)
@@ -258,6 +335,8 @@ class CritsConnector(phantom.BaseConnector):
             result = self._get_resource(param)
         elif (action == self.ACTION_ID_UPDATE_RESOURCE):
             result = self._update_resource(param)
+        elif (action == self.ACTION_ID_CREATE_RESOURCE):
+            result = self._create_resource(param)
         elif (action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
             result = self._test_asset_connectivity(param)
 
