@@ -123,7 +123,7 @@ class CritsConnector(BaseConnector):
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _make_rest_call(self, endpoint, action_result, params={}, data={}, headers={}, method="get"):
+    def _make_rest_call(self, endpoint, action_result, params={}, data=None, headers={}, method="get"):
         """ Returns 2 values, use RetVal """
         url = self._base_url + endpoint
         params.update(self._params)
@@ -150,7 +150,7 @@ class CritsConnector(BaseConnector):
     def _handle_run_query(self, param):
 
         action_result = self.add_action_result(ActionResult(param))
-        query = None
+        query = {}
         endpoint = param.get(consts.CRITS_JSON_NEXT_PAGE)
         # No page URI provided
         if not endpoint:
@@ -166,9 +166,14 @@ class CritsConnector(BaseConnector):
                     return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
             else:
                 query = {}
-            query['offset'] = int(param.get('offset', 0))
-            query['limit'] = int(param.get('limit', 0))
+            if 'offset' in param:
+                query['offset'] = int(param.get('offset'))
+            if 'limit' in param:
+                query['limit'] = int(param.get('limit'))
+
             endpoint = "/api/v1/{0}/".format(resource)
+
+        self.debug_print(query)
 
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result, params=query)
@@ -259,15 +264,14 @@ class CritsConnector(BaseConnector):
         endpoint = "/api/v1/{0}/".format(resource)
 
         ret_val, response = self._make_rest_call(endpoint, action_result, data=data, method="post")
+        self.debug_print(response)
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_data()
 
-        # There is a response_code variable in the dict, but it will return 0 when it both fails
-        # and succeeds, so we do this instead
-        msg = response.get('message', '')
-        if 'success' not in msg.lower():
-            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(msg))
+        res_id = response.get('id')
+        if not res_id:
+            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(response.get('msg', '')))
 
         action_result.add_data(response)
 
