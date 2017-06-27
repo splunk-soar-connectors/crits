@@ -166,10 +166,16 @@ class CritsConnector(BaseConnector):
                     return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
             else:
                 query = {}
-            if 'offset' in param:
-                query['offset'] = int(param.get('offset'))
-            if 'limit' in param:
-                query['limit'] = int(param.get('limit'))
+            # Try for type casts
+            try:
+                if 'offset' in param:
+                    query['offset'] = int(param.get('offset'))
+                if 'limit' in param:
+                    query['limit'] = int(param.get('limit'))
+            except Exception as e:
+                # Since the type of these parameters is already numeric, we probably shouldn't end up here
+                return action_result.set_status(phantom.APP_ERROR, "Invalid offset or limit: Value must be numeric")
+
 
             endpoint = "/api/v1/{0}/".format(resource)
 
