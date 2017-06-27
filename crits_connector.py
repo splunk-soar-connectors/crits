@@ -59,11 +59,7 @@ class CritsConnector(BaseConnector):
         return phantom.APP_SUCCESS
 
     def _process_empty_reponse(self, response, action_result):
-
-        if (200 <= response.status_code < 205):
-            return RetVal(phantom.APP_SUCCESS, {})
-
-        return RetVal(action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"), None)
+        return RetVal(action_result.set_status(phantom.APP_ERROR), None)
 
     def _process_html_response(self, response, action_result):
 
