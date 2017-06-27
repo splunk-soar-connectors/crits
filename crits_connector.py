@@ -176,7 +176,6 @@ class CritsConnector(BaseConnector):
                 # Since the type of these parameters is already numeric, we probably shouldn't end up here
                 return action_result.set_status(phantom.APP_ERROR, "Invalid offset or limit: Value must be numeric")
 
-
             endpoint = "/api/v1/{0}/".format(resource)
 
         self.debug_print(query)
