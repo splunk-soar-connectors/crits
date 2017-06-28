@@ -269,7 +269,6 @@ class CritsConnector(BaseConnector):
         endpoint = "/api/v1/{0}/".format(resource)
 
         ret_val, response = self._make_rest_call(endpoint, action_result, data=data, method="post")
-        self.debug_print(response)
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_data()
