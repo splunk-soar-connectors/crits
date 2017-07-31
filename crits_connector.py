@@ -56,6 +56,8 @@ class CritsConnector(BaseConnector):
 
         self._base_url = config[consts.CRITS_JSON_BASE_URL].rstrip('/')
 
+        self._verify = config.get(phantom.APP_JSON_VERIFY, False)
+
         return phantom.APP_SUCCESS
 
     def _process_empty_reponse(self, response, action_result):
@@ -138,7 +140,7 @@ class CritsConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(str(e))), None)
 
         try:
-            response = request_func(url, params=params, json=data, headers=headers)
+            response = request_func(url, params=params, json=data, headers=headers, verify=self._verify)
         except Exception as e:
             # Set the action_result status to error, the handler function will most probably return as is
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Error connecting: {0}".format(str(e))), None)
