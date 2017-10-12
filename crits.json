@@ -26,7 +26,7 @@
       "description": "Verify server certificate",
       "required": true,
       "order": 1,
-      "default": false
+      "default": true
     },
     "username": {
       "description": "Username",
