@@ -56,7 +56,7 @@ class CritsConnector(BaseConnector):
 
         self._base_url = config[consts.CRITS_JSON_BASE_URL].rstrip('/')
 
-        self._verify = config.get(phantom.APP_JSON_VERIFY, False)
+        self._verify = config.get(phantom.APP_JSON_VERIFY, True)
 
         return phantom.APP_SUCCESS
 
