@@ -774,6 +774,15 @@
           ]
         },
         {
+          "data_path": "action_result.parameter.vault_id",
+          "data_type": "string",
+          "example_values": [
+          ],
+          "contains": [
+            "vault id"
+          ]
+        },
+        {
           "data_path": "action_result.parameter.resource",
           "data_type": "string",
           "example_values": [
