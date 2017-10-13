@@ -1,17 +1,17 @@
 {
   "appid": "ef9cfabb-f011-43c3-bc8b-0ef30a04bf35",
   "name": "CRITs", 
-  "description" : "This App supports various <b>investigative</b> actions on <b>CRITs</b>",
+  "description" : "This App supports various investigative actions on CRITs",
   "publisher": "Phantom", 
   "type": "siem", 
   "main_module": "crits_connector.pyc", 
-    "app_version": "1.0.6",
-    "utctime_updated": "2017-07-31T19:44:44.000000Z",
+  "app_version": "1.0.6",
+  "utctime_updated": "2017-07-31T19:44:44.000000Z",
   "package_name": "phantom_crits",
   "product_name": "CRITs", 
   "product_vendor": "MITRE", 
   "product_version_regex": ".*",
-  "min_phantom_version": "2.0.264",
+  "min_phantom_version": "3.0.251",
   "logo": "crits.png",
   "license": "Copyright (c) Phantom Cyber Corporation 2017",
   "configuration": {
@@ -26,7 +26,7 @@
       "description": "Verify server certificate",
       "required": true,
       "order": 1,
-      "default": false
+      "default": true
     },
     "username": {
       "description": "Username", 
@@ -67,7 +67,7 @@
           "order": 0,
           "required": false,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
+          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
           "contains": [ "crits resource" ]
         },
         "query": {
@@ -310,7 +310,7 @@
           "order": 0,
           "required": true,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
+          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
           "contains": [ "crits resource" ]
         }
       }, 
@@ -515,7 +515,7 @@
           "order": 0,
           "required": true,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
+          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
           "contains": [ "crits resource" ]
         },
         "patch_data": {
@@ -626,7 +626,7 @@
     {
       "action": "create resource",
       "description": "Create a resource",
-      "verbose": "All resources expect different fields, save a few common fields. The <b>post_data</b> field expects a JSON string. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>. Each resource has a section outlining it's specific fields.</br>If no confidence is specified, it will default to \"low\"",
+      "verbose": "All resources expect different fields, save a few common fields. The <b>post_data</b> field expects a JSON string. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>. Each resource has a section outlining it's specific fields.</br>If no confidence is specified, it will default to \"low\".<br> Additionally, you can upload files through the vault to be added to the resource. However, not all resource types will accept a file. If you attempt to add a file to a resource that doesn't accept one, then the action will still succeed and a resource will be created, but the attachment will not be added to it. By default, each file will be added as a 'raw' file. If you wish to change this, for example, to upload a zip file, you can set the 'file_format' attribute in the params to 'zip'",
       "type": "generic",
       "identifier": "create_resource",
       "read_only": true,
@@ -636,28 +636,38 @@
           "data_type": "string",
           "required": true,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "comments", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "targets" ],
+          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
           "contains": [ "crits resource" ],
           "order": 0
+        },
+        "vault_id": {
+            "description": "File to add to resource",
+            "data_type": "string",
+            "required": false,
+            "primary": true,
+            "contains": [
+                "vault id"
+            ],
+            "order": 1
         },
         "source": {
           "description": "The Source of the resource",
           "data_type": "string",
           "required": true,
-          "order": 1
+          "order": 2
         },
         "confidence": {
           "description": "Confidence",
           "data_type": "string",
           "required": false,
           "value_list": [ "low", "medium", "high" ],
-          "order": 2
+          "order": 3
         },
         "post_data": {
           "description": "Post JSON Data",
           "data_type": "string",
-          "required": true,
-          "order": 3
+          "required": false,
+          "order": 4
         }
       },
       "render": {

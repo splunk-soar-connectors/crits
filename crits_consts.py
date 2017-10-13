@@ -29,6 +29,7 @@ CRITS_JSON_NEXT_PAGE = "next_page"
 CRITS_JSON_POST_DATA = "post_data"
 CRITS_JSON_PATCH_DATA = "patch_data"
 CRITS_JSON_CONFIDENCE = "confidence"
+CRITS_JSON_FILE = "vault_id"
 
 CRITS_ERR_API_UNSUPPORTED_METHOD = "Unsupported method: {method} called"
 CRITS_ERR_SERVER_CONNECTION = "Error connecting to server"
