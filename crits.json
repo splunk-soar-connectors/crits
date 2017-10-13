@@ -5,7 +5,7 @@
   "publisher": "Phantom",
   "type": "siem",
   "main_module": "crits_connector.pyc",
-  "app_version": "1.0.7",
+  "app_version": "1.0.8",
   "utctime_updated": "2017-10-12T01:31:21.000000Z",
   "package_name": "phantom_crits",
   "product_name": "CRITs",
@@ -26,7 +26,7 @@
       "description": "Verify server certificate",
       "required": true,
       "order": 1,
-      "default": true
+      "default": false
     },
     "username": {
       "description": "Username",
