@@ -16,6 +16,7 @@
 import phantom.app as phantom
 from phantom.action_result import ActionResult
 from phantom.app import BaseConnector
+from phantom.vault import Vault
 
 # THIS Connector imports
 import crits_consts as consts
@@ -23,8 +24,6 @@ import crits_consts as consts
 import json
 import requests
 from bs4 import BeautifulSoup
-
-requests.packages.urllib3.disable_warnings()
 
 
 class RetVal(tuple):
@@ -77,8 +76,11 @@ class CritsConnector(BaseConnector):
         except:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
+        if error_text.strip():
+            message = "Error from server: Status Code: {0}. Data from server:\n{1}\n".format(status_code,
                 error_text)
+        else:
+            message = "Error from server: Status Code: {0}".format(status_code)
 
         message = message.replace('{', '{{').replace('}', '}}')
 
@@ -97,7 +99,10 @@ class CritsConnector(BaseConnector):
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         action_result.add_data(resp_json)
-        message = r.text.replace('{', '{{').replace('}', '}}')
+        try:
+            message = resp_json['error_message']
+        except:
+            message = r.text.replace('{', '{{').replace('}', '}}')
         return RetVal( action_result.set_status( phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
 
     def _process_response(self, r, action_result):
@@ -125,7 +130,7 @@ class CritsConnector(BaseConnector):
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _make_rest_call(self, endpoint, action_result, params={}, data=None, headers={}, method="get"):
+    def _make_rest_call(self, endpoint, action_result, params={}, data=None, headers={}, method="get", files=None, real_data=None):
         """ Returns 2 values, use RetVal """
         url = self._base_url + endpoint
         params.update(self._params)
@@ -140,12 +145,14 @@ class CritsConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(str(e))), None)
 
         try:
-            response = request_func(url, params=params, json=data, headers=headers, verify=self._verify)
+            response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data)
         except Exception as e:
             # Set the action_result status to error, the handler function will most probably return as is
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error connecting: {0}".format(str(e))), None)
-
-        self.debug_print(response.url)
+            return RetVal(action_result.set_status(
+                phantom.APP_ERROR, "Error connecting: {0}".format(
+                    str(e).replace(self._params['api_key'], '<api_key>')
+                )),
+                None)
 
         return self._process_response(response, action_result)
 
@@ -179,8 +186,6 @@ class CritsConnector(BaseConnector):
                 return action_result.set_status(phantom.APP_ERROR, "Invalid offset or limit: Value must be numeric")
 
             endpoint = "/api/v1/{0}/".format(resource)
-
-        self.debug_print(query)
 
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result, params=query)
@@ -219,7 +224,7 @@ class CritsConnector(BaseConnector):
 
         action_result.add_data(response)
 
-        return action_result.set_status(phantom.APP_SUCCESS)
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully retrieved resource")
 
     def _update_resource(self, param):
 
@@ -247,7 +252,15 @@ class CritsConnector(BaseConnector):
 
         action_result.add_data(response)
 
-        return action_result.set_status(phantom.APP_SUCCESS)
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully updated resource")
+
+    def _get_filename_filepath(self, action_result, vault_id):
+        try:
+            file_data = Vault.get_file_info(vault_id=vault_id)[0]
+        except:
+            return action_result.set_status(phantom.APP_ERROR, "No item could be found with vault id"), None, None
+
+        return phantom.APP_SUCCESS, file_data['name'], file_data['path']
 
     def _create_resource(self, param):
         action_result = self.add_action_result(ActionResult(param))
@@ -256,10 +269,28 @@ class CritsConnector(BaseConnector):
         resource = param[consts.CRITS_JSON_RESOURCE]
         data_str = param.get(consts.CRITS_JSON_POST_DATA)
         confidence = param.get(consts.CRITS_JSON_CONFIDENCE, 'low')
+        vault_id = param.get(consts.CRITS_JSON_FILE)
 
         data = {}
         data['source'] = source
         data['confidence'] = confidence
+
+        if vault_id:
+            try:
+                ret_val, file_name, file_path = self._get_filename_filepath(action_result, vault_id)
+                if phantom.is_fail(ret_val):
+                    return ret_val
+                files = {
+                    'filedata': (file_name, open(file_path, 'rb'))
+                }
+                data.update({
+                    'upload_type': 'file',
+                    'file_format': 'raw'
+                })
+            except Exception as e:
+                return action_result.set_status(phantom.APP_ERROR, "Error reading file: {}".format(str(e)))
+        else:
+            files = None
 
         if data_str:
             try:
@@ -270,18 +301,18 @@ class CritsConnector(BaseConnector):
 
         endpoint = "/api/v1/{0}/".format(resource)
 
-        ret_val, response = self._make_rest_call(endpoint, action_result, data=data, method="post")
+        ret_val, response = self._make_rest_call(endpoint, action_result, real_data=data, method="post", files=files)
 
         if (phantom.is_fail(ret_val)):
             return action_result.get_data()
 
         res_id = response.get('id')
         if not res_id:
-            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(response.get('msg', '')))
+            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(response.get('message', '')))
 
         action_result.add_data(response)
 
-        return action_result.set_status(phantom.APP_SUCCESS)
+        return action_result.set_status(phantom.APP_SUCCESS, "Successfully created new resource")
 
     def _test_asset_connectivity(self, param):
 
