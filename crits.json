@@ -5,8 +5,8 @@
   "publisher": "Phantom",
   "type": "siem",
   "main_module": "crits_connector.pyc",
-  "app_version": "1.0.8",
-  "utctime_updated": "2017-10-12T01:31:21.000000Z",
+  "app_version": "1.0.9",
+  "utctime_updated": "2017-10-13T19:33:13.000000Z",
   "package_name": "phantom_crits",
   "product_name": "CRITs",
   "product_vendor": "MITRE",
@@ -66,8 +66,27 @@
           "order": 0,
           "required": false,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
-          "contains": [ "crits resource" ]
+          "value_list": [
+            "actors",
+            "actoridentifiers",
+            "backdoors",
+            "campaigns",
+            "certificates",
+            "domains",
+            "emails",
+            "events",
+            "exploits",
+            "indicators",
+            "ips",
+            "pcaps",
+            "raw_data",
+            "samples",
+            "screenshots",
+            "targets"
+          ],
+          "contains": [
+            "crits resource"
+          ]
         },
         "query": {
           "description": "Query to run",
@@ -321,8 +340,27 @@
           "order": 0,
           "required": true,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
-          "contains": [ "crits resource" ]
+          "value_list": [
+            "actors",
+            "actoridentifiers",
+            "backdoors",
+            "campaigns",
+            "certificates",
+            "domains",
+            "emails",
+            "events",
+            "exploits",
+            "indicators",
+            "ips",
+            "pcaps",
+            "raw_data",
+            "samples",
+            "screenshots",
+            "targets"
+          ],
+          "contains": [
+            "crits resource"
+          ]
         }
       },
       "render": {
@@ -534,8 +572,27 @@
           "order": 0,
           "required": true,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
-          "contains": [ "crits resource" ]
+          "value_list": [
+            "actors",
+            "actoridentifiers",
+            "backdoors",
+            "campaigns",
+            "certificates",
+            "domains",
+            "emails",
+            "events",
+            "exploits",
+            "indicators",
+            "ips",
+            "pcaps",
+            "raw_data",
+            "samples",
+            "screenshots",
+            "targets"
+          ],
+          "contains": [
+            "crits resource"
+          ]
         },
         "patch_data": {
           "description": "Update JSON Data",
@@ -663,19 +720,38 @@
           "data_type": "string",
           "required": true,
           "primary": true,
-          "value_list": [ "actors", "actoridentifiers", "backdoors", "campaigns", "certificates", "domains", "emails", "events", "exploits", "indicators", "ips", "pcaps", "raw_data", "samples", "screenshots", "targets" ],
-          "contains": [ "crits resource" ],
+          "value_list": [
+            "actors",
+            "actoridentifiers",
+            "backdoors",
+            "campaigns",
+            "certificates",
+            "domains",
+            "emails",
+            "events",
+            "exploits",
+            "indicators",
+            "ips",
+            "pcaps",
+            "raw_data",
+            "samples",
+            "screenshots",
+            "targets"
+          ],
+          "contains": [
+            "crits resource"
+          ],
           "order": 0
         },
         "vault_id": {
-            "description": "File to add to resource",
-            "data_type": "string",
-            "required": false,
-            "primary": true,
-            "contains": [
-                "vault id"
-            ],
-            "order": 1
+          "description": "File to add to resource",
+          "data_type": "string",
+          "required": false,
+          "primary": true,
+          "contains": [
+            "vault id"
+          ],
+          "order": 1
         },
         "source": {
           "description": "The Source of the resource",
@@ -776,8 +852,7 @@
         {
           "data_path": "action_result.parameter.vault_id",
           "data_type": "string",
-          "example_values": [
-          ],
+          "example_values": [],
           "contains": [
             "vault id"
           ]
