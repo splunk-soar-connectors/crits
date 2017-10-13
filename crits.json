@@ -1,17 +1,17 @@
 {
   "appid": "ef9cfabb-f011-43c3-bc8b-0ef30a04bf35",
   "name": "CRITs",
-  "description": "This App supports various <b>investigative</b> actions on <b>CRITs</b>",
+  "description": "This App supports various investigative actions on CRITs",
   "publisher": "Phantom",
   "type": "siem",
   "main_module": "crits_connector.pyc",
-  "app_version": "1.0.7",
+  "app_version": "1.0.8",
   "utctime_updated": "2017-10-12T01:31:21.000000Z",
   "package_name": "phantom_crits",
   "product_name": "CRITs",
   "product_vendor": "MITRE",
   "product_version_regex": ".*",
-  "min_phantom_version": "2.0.264",
+  "min_phantom_version": "3.0.251",
   "logo": "crits.png",
   "license": "Copyright (c) Phantom Cyber Corporation 2017",
   "configuration": {
@@ -44,7 +44,7 @@
   "actions": [
     {
       "action": "test connectivity",
-      "description": "Validate the asset configuration for connectivity. This action logs into the device to check the connection and credentials.",
+      "description": "Validate the asset configuration for connectivity. This action logs into the device to check the connection and credentials",
       "type": "test",
       "identifier": "test_asset_connectivity",
       "read_only": true,
@@ -54,8 +54,8 @@
     },
     {
       "action": "run query",
-      "description": "Run a search query on the CRITs device.",
-      "verbose": "CRITs query is made up of multiple instances of key value pairs, much like the parameters that are specified to an HTTP URL. To keep things simple, the action takes as input each parameter and it's value to match as a JSON dictionary (in string form).<br>For example to search for an indicator of value <b>baddomain.com</b>:<ul><li>Set <b>resource</b> parameter to <b>indicators</b></li><li>The <b>query</b> parameter should be set to <b>{ \"c-value\": \"baddomain.com\" }</b></li></ul>To add more values to match just add the required key value pairs to the <b>query</b> dictionary.<br>While orchrestrating this action from the UI, typing the JSON dictionary should suffice.<br>While automating this action from a playbook, if you are creating a dictionary, then you will require to convert it into a JSON string using the json.loads(...) python function before passing it as the value to the <b>query</b> parameter.<br>If the next page URI is present, the other parameters will be ignored. If it isn't present, the resource to query on field must be present.",
+      "description": "Run a search query on the CRITs device",
+      "verbose": "Query on CRITs is made up of multiple instances of key value pairs, much like the parameters that are specified to an HTTP URL. To keep things simple, the action takes as input each parameter and it's value to match as a JSON dictionary (in string form).<br>For example to search for an indicator of value <b>baddomain.com</b>:<ul><li>Set <b>resource</b> parameter to <b>indicators</b></li><li>The <b>query</b> parameter should be set to <b>{ \"c-value\": \"baddomain.com\" }</b></li></ul>To add more values to match just add the required key value pairs to the <b>query</b> dictionary.<br>While orchrestrating this action from the UI, typing the JSON dictionary should suffice.<br>While automating this action from a playbook, if you are creating a dictionary, then you will require to convert it into a JSON string using the json.loads(...) python function before passing it as the value to the <b>query</b> parameter.<br>If the next page URI is present, the other parameters will be ignored. If it isn't present, the resource to query on field must be present.",
       "type": "investigate",
       "identifier": "run_query",
       "read_only": true,
@@ -319,7 +319,7 @@
     },
     {
       "action": "get resource",
-      "description": "Get a specific resource from CRITs.",
+      "description": "Get a specific resource from CRITs",
       "type": "investigate",
       "identifier": "get_resource",
       "read_only": true,
@@ -551,7 +551,7 @@
     {
       "action": "update resource",
       "description": "Update a specified resource",
-      "verbose": "The <b>patch_data</b> field expects a json string which will be accepted by the action handler. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>, in the sections pertaining to updating TLOs using PATCH",
+      "verbose": "The <b>patch_data</b> field expects a json string which will be accepted by the action handler. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>, in the sections pertaining to updating TLOs using PATCH.",
       "type": "generic",
       "identifier": "update_resource",
       "read_only": true,
@@ -710,7 +710,7 @@
     {
       "action": "create resource",
       "description": "Create a resource",
-      "verbose": "All resources expect different fields, save a few common fields. The <b>post_data</b> field expects a JSON string. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>. Each resource has a section outlining it's specific fields.</br>If no confidence is specified, it will default to \"low\"",
+      "verbose": "All resources expect different fields, save a few common fields. The <b>post_data</b> field expects a JSON string. More information can be found at <a href=\"https://github.com/crits/crits/wiki/Authenticated-API\">this link</a>. Each resource has a section outlining it's specific fields.</br>If no confidence is specified, it will default to \"low\".",
       "type": "generic",
       "identifier": "create_resource",
       "read_only": true,
