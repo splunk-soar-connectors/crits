@@ -76,7 +76,11 @@ class CritsConnector(BaseConnector):
         except:
             error_text = "Cannot parse error details"
 
-        message = "Error from server: Status Code: {0}".format(status_code)
+        if error_text.strip():
+            message = "Error from server: Status Code: {0}. Data from server:\n{1}\n".format(status_code,
+                error_text)
+        else:
+            message = "Error from server: Status Code: {0}".format(status_code)
 
         message = message.replace('{', '{{').replace('}', '}}')
 
