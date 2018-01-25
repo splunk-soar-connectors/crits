@@ -14,7 +14,7 @@
     "min_phantom_version": "3.0.251",
     "logo": "logo_crits.svg",
     "logo_dark": "logo_crits_dark.svg",
-    "license": "Copyright (c) Phantom Cyber Corporation 2017",
+    "license": "Copyright (c) Phantom Cyber Corporation, 2017-2018",
     "configuration": {
         "url": {
             "description": "Device URL e.g. https://mycrits.contoso.com:8080",
