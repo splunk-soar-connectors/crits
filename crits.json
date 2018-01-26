@@ -6,7 +6,7 @@
     "type": "siem",
     "main_module": "crits_connector.pyc",
     "app_version": "1.0.14",
-    "utctime_updated": "2018-01-25T03:03:03.000000Z",
+    "utctime_updated": "2018-01-26T00:47:47.000000Z",
     "package_name": "phantom_crits",
     "product_name": "CRITs",
     "product_vendor": "MITRE",
