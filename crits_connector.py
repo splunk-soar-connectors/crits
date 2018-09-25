@@ -198,7 +198,7 @@ class CritsConnector(BaseConnector):
 
         action_result.update_summary({'total_results': total_count})
         if next_page:
-            action_result.update_summary({'next_page': next_page})
+            action_result.update_summary({'next_page': next_page.replace(self._params['api_key'], '<api_key>')})
 
         objects = response.get('objects')
 
