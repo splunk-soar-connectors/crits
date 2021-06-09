@@ -4,17 +4,21 @@
     "description": "This App supports various investigative actions on CRITs",
     "publisher": "Phantom",
     "type": "siem",
-    "main_module": "crits_connector.pyc",
-    "app_version": "1.0.18",
+    "main_module": "crits_connector.py",
+    "app_version": "2.0.0",
     "utctime_updated": "2018-12-07T02:14:16.000000Z",
     "package_name": "phantom_crits",
     "product_name": "CRITs",
     "product_vendor": "MITRE",
     "product_version_regex": ".*",
-    "min_phantom_version": "3.0.251",
+    "min_phantom_version": "4.9.39220",
+    "python_version": "3",
+    "latest_tested_versions": [
+        "On prem, Version: 4-master"
+    ],
     "logo": "logo_crits.svg",
     "logo_dark": "logo_crits_dark.svg",
-    "license": "Copyright (c) Phantom Cyber Corporation, 2017-2018",
+    "license": "Copyright (c) 2017-2021 Splunk Inc.",
     "configuration": {
         "url": {
             "description": "Device URL e.g. https://mycrits.contoso.com:8080",
@@ -25,7 +29,6 @@
         "verify_server_cert": {
             "data_type": "boolean",
             "description": "Verify server certificate",
-            "required": true,
             "order": 1,
             "default": false
         },
@@ -65,7 +68,6 @@
                     "description": "Resource to query on. Required if no Page URI is present",
                     "data_type": "string",
                     "order": 0,
-                    "required": false,
                     "primary": true,
                     "value_list": [
                         "actors",
@@ -93,7 +95,6 @@
                     "description": "Query to run",
                     "data_type": "string",
                     "order": 1,
-                    "required": false,
                     "primary": true,
                     "contains": [
                         "crits query"
@@ -102,20 +103,17 @@
                 "limit": {
                     "description": "Results per page",
                     "data_type": "numeric",
-                    "order": 2,
-                    "required": false
+                    "order": 2
                 },
                 "offset": {
                     "description": "Paging offset",
                     "data_type": "numeric",
-                    "order": 3,
-                    "required": false
+                    "order": 3
                 },
                 "next_page": {
                     "description": "Next page URI",
                     "data_type": "string",
-                    "order": 4,
-                    "required": false
+                    "order": 4
                 }
             },
             "render": {
@@ -127,32 +125,58 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.limit",
-                    "data_type": "string"
+                    "data_type": "numeric",
+                    "example_values": [
+                        10,
+                        100
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.next_page",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "/api/v1/indicators/?limit=1&offset=1",
+                        "/api/v1/indicators/?limit=1&offset=2"
+                    ]
+
                 },
                 {
                     "data_path": "action_result.parameter.offset",
-                    "data_type": "string"
+                    "data_type": "numeric",
+                    "example_values": [
+                        0,
+                        5
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.query",
                     "data_type": "string",
                     "contains": [
                         "crits query"
+                    ],
+                    "example_values": [
+                        "{\"c-value\": \"www.indicator.com\"}"
                     ]
+
                 },
                 {
                     "data_path": "action_result.parameter.resource",
                     "data_type": "string",
                     "contains": [
                         "crits resource"
+                    ],
+                    "example_values": [
+                        "certificates",
+                        "indicators",
+                        "ips"
                     ]
                 },
                 {
@@ -160,9 +184,42 @@
                     "data_type": "string",
                     "contains": [
                         "crits resource id"
-                    ],
-                    "column_name": "ID",
-                    "column_irder": 0
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.analyst",
+                    "data_type": "string",
+                    "example_value": [
+                        "admin"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.date",
+                    "data_type": "string",
+                    "example_value": [
+                        "2017-06-23 17:46:36.544000"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.description",
+                    "data_type": "string",
+                    "example_value": [
+                        "Metal Claws"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.end_date",
+                    "data_type": "string",
+                    "example_value": [
+                        "2017-06-23 17:46:36.544000"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.start_date",
+                    "data_type": "string",
+                    "example_value": [
+                        "2017-06-23 17:46:36.544000"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.attack_types",
@@ -198,9 +255,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.created",
-                    "data_type": "string",
-                    "column_name": "Created",
-                    "column_irder": 2
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.description",
@@ -291,9 +346,7 @@
                     "data_type": "string",
                     "contains": [
                         "crits resource"
-                    ],
-                    "column_name": "Type",
-                    "column_irder": 1
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.value",
@@ -301,19 +354,31 @@
                 },
                 {
                     "data_path": "action_result.summary.total_results",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Total results: 4, Next page: /api/v1/indicators/?username=admin&api_key=<api_key>&limit=1&offset=1"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -373,13 +438,21 @@
             "output": [
                 {
                     "data_path": "action_result.status",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.id",
                     "data_type": "string",
                     "contains": [
                         "crits resource id"
+                    ],
+                    "example_values": [
+                        "60ba1a3de1c1dc5cf532dae7",
+                        "60ba3fh6e1c1dc5cttttdae7"
                     ]
                 },
                 {
@@ -387,6 +460,10 @@
                     "data_type": "string",
                     "contains": [
                         "crits resource"
+                    ],
+                    "example_values": [
+                        "indicators",
+                        "ips"
                     ]
                 },
                 {
@@ -396,6 +473,41 @@
                     "column_order": 0,
                     "contains": [
                         "crits resource id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.analyst",
+                    "data_type": "string",
+                    "example_value": [
+                        "admin"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.date",
+                    "data_type": "string",
+                    "example_value": [
+                        "2017-06-23 17:46:36.544000"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.description",
+                    "data_type": "string",
+                    "example_value": [
+                        "Metal Claws"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.end_date",
+                    "data_type": "string",
+                    "example_value": [
+                        "2017-06-23 17:46:36.544000"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.activity.*.start_date",
+                    "data_type": "string",
+                    "example_value": [
+                        "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
@@ -441,6 +553,27 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.filedata",
+                    "data_type": "string",
+                    "example_value": [
+                        "c2FtcGxlIGZpbGUgbGluZTE="
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.filename",
+                    "data_type": "string",
+                    "example_value": [
+                        "ph_vault_datafile"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.filetype",
+                    "data_type": "string",
+                    "example_value": [
+                        "ASCII text, with no line terminators"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.impact.analyst",
                     "data_type": "string"
                 },
@@ -453,8 +586,29 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.md5",
+                    "data_type": "string",
+                    "example_value": [
+                        "testtestcdf080d433600809testtest"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.mimetype",
+                    "data_type": "string",
+                    "example_value": [
+                        "text/plain"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.modified",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.name",
+                    "data_type": "string",
+                    "example_value": [
+                        "this is me"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.relationships.*.analyst",
@@ -493,6 +647,27 @@
                     "data_type": "numeric"
                 },
                 {
+                    "data_path": "action_result.data.*.sha1",
+                    "data_type": "string",
+                    "example_value": [
+                        "testteste42e3d5a76a746e07aed942ctesttest"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.sha256",
+                    "data_type": "string",
+                    "example_value": [
+                        "testtestb577f55b302b4485decb454ecf5748c286c745537317ff2etesttest"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.size",
+                    "data_type": "numeric",
+                    "example_value": [
+                        17
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.source.*.instances.*.analyst",
                     "data_type": "string"
                 },
@@ -513,6 +688,13 @@
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.ssdeep",
+                    "data_type": "string",
+                    "example_value": [
+                        "3:MRx:8x"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.status",
                     "data_type": "string"
                 },
@@ -522,9 +704,7 @@
                 },
                 {
                     "data_path": "action_result.data.*.type",
-                    "data_type": "string",
-                    "column_name": "Type",
-                    "column_irder": 1
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.value",
@@ -536,15 +716,24 @@
                 },
                 {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_value": [
+                        "Successfully retrieved resource"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -638,7 +827,8 @@
                     "data_path": "action_result.parameter.resource",
                     "data_type": "string",
                     "example_values": [
-                        "indicators"
+                        "indicators",
+                        "ips"
                     ],
                     "contains": [
                         "crits resource"
@@ -660,7 +850,7 @@
                     "data_path": "action_result.data.*.message",
                     "data_type": "string",
                     "example_values": [
-                        "success!"
+                        "success"
                     ]
                 },
                 {
@@ -681,14 +871,17 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
+                    "data_path": "action_result.summary.resource_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "aaaa1a3de1c1dc5cf532deee"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        ""
+                        "Successfully updated resource"
                     ]
                 },
                 {
@@ -747,7 +940,6 @@
                 "vault_id": {
                     "description": "File to add to resource",
                     "data_type": "string",
-                    "required": false,
                     "primary": true,
                     "contains": [
                         "vault id"
@@ -763,7 +955,6 @@
                 "confidence": {
                     "description": "Confidence",
                     "data_type": "string",
-                    "required": false,
                     "value_list": [
                         "low",
                         "medium",
@@ -774,7 +965,6 @@
                 "post_data": {
                     "description": "Post JSON Data",
                     "data_type": "string",
-                    "required": false,
                     "order": 4
                 }
             },
@@ -797,7 +987,9 @@
                     "data_path": "action_result.parameter.confidence",
                     "data_type": "string",
                     "example_values": [
-                        "low"
+                        "low",
+                        "medium",
+                        "high"
                     ]
                 },
                 {
@@ -827,7 +1019,6 @@
                 {
                     "data_path": "action_result.parameter.vault_id",
                     "data_type": "string",
-                    "example_values": [],
                     "contains": [
                         "vault id"
                     ]
@@ -876,14 +1067,17 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
+                    "data_path": "action_result.summary.resource_id",
+                    "data_type": "string",
+                    "example_values": [
+                        "aaaa1a3de1c1dc5cf532deee"
+                    ]
                 },
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
                     "example_values": [
-                        ""
+                        "Successfully created new resource"
                     ]
                 },
                 {
