@@ -5,8 +5,8 @@
     "publisher": "Phantom",
     "type": "siem",
     "main_module": "crits_connector.py",
-    "app_version": "2.0.0",
-    "utctime_updated": "2018-12-07T02:14:16.000000Z",
+    "app_version": "2.0.1",
+    "utctime_updated": "2021-06-09T02:27:54.000000Z",
     "package_name": "phantom_crits",
     "product_name": "CRITs",
     "product_vendor": "MITRE",
@@ -146,7 +146,6 @@
                         "/api/v1/indicators/?limit=1&offset=1",
                         "/api/v1/indicators/?limit=1&offset=2"
                     ]
-
                 },
                 {
                     "data_path": "action_result.parameter.offset",
@@ -165,7 +164,6 @@
                     "example_values": [
                         "{\"c-value\": \"www.indicator.com\"}"
                     ]
-
                 },
                 {
                     "data_path": "action_result.parameter.resource",
