@@ -1,25 +1,18 @@
 # --
 # File: crits_connector.py
+# Copyright (c) 2017-2021 Splunk Inc.
 #
-# Copyright (c) Phantom Cyber Corporation, 2017-2018
-#
-# This unpublished material is proprietary to Phantom Cyber.
-# All rights reserved. The methods and
-# techniques described herein are considered trade secrets
-# and/or confidential. Reproduction or distribution, in whole
-# or in part, is forbidden except by express written permission
-# of Phantom Cyber Corporation.
-#
-# --
+# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
 
 # Phantom imports
 import phantom.app as phantom
 from phantom.action_result import ActionResult
 from phantom.app import BaseConnector
-from phantom.vault import Vault
+import phantom.rules as phrules
 
 # THIS Connector imports
-import crits_consts as consts
+from crits_consts import *
 
 import json
 import requests
@@ -50,14 +43,50 @@ class CritsConnector(BaseConnector):
         config = self.get_config()
 
         self._params = {
-                "username": config[consts.CRITS_JSON_USERNAME],
-                "api_key": config[consts.CRITS_JSON_API_KEY]}
+                "username": config[CRITS_JSON_USERNAME],
+                "api_key": config[CRITS_JSON_API_KEY]}
 
-        self._base_url = config[consts.CRITS_JSON_BASE_URL].rstrip('/')
+        self._base_url = config[CRITS_JSON_BASE_URL].rstrip('/')
 
         self._verify = config.get(phantom.APP_JSON_VERIFY, False)
 
         return phantom.APP_SUCCESS
+
+    def _get_error_message_from_exception(self, e):
+        """ This method is used to get appropriate error message from the exception.
+        :param e: Exception object
+        :return: error message
+        """
+        error_code = PHANTOM_ERR_CODE_UNAVAILABLE
+        error_msg = PHANTOM_ERR_MSG_UNAVAILABLE
+        try:
+            if hasattr(e, 'args'):
+                if len(e.args) > 1:
+                    error_code = e.args[0]
+                    error_msg = e.args[1]
+                elif len(e.args) == 1:
+                    error_msg = e.args[0]
+        except:
+            pass
+
+        return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
+
+    def _validate_integer(self, action_result, parameter, key, allow_zero=False):
+        if parameter is not None:
+            try:
+                if not float(parameter).is_integer():
+                    return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_INT.format(param=key)), None
+
+                parameter = int(parameter)
+            except:
+                return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_INT.format(param=key)), None
+
+            if parameter < 0:
+                return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_NEGATIVE_INT_PARAM.format(param=key)), None
+            if not allow_zero and parameter == 0:
+                return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_PARAM.format(param=key)), None
+
+        return phantom.APP_SUCCESS, parameter
 
     def _process_empty_reponse(self, response, action_result):
         return RetVal(action_result.set_status(phantom.APP_ERROR), None)
@@ -77,8 +106,7 @@ class CritsConnector(BaseConnector):
             error_text = "Cannot parse error details"
 
         if error_text.strip():
-            message = "Error from server: Status Code: {0}. Data from server:\n{1}\n".format(status_code,
-                error_text)
+            message = "Error from server: Status Code: {0}. Data from server:\n{1}\n".format(status_code, error_text)
         else:
             message = "Error from server: Status Code: {0}".format(status_code)
 
@@ -93,9 +121,9 @@ class CritsConnector(BaseConnector):
             resp_json = r.json()
         except Exception as e:
             self.save_progress('Cannot parse JSON')
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse response as JSON", e), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse response as JSON", self._get_error_message_from_exception(e)), None)
 
-        if (200 <= r.status_code < 205):
+        if 200 <= r.status_code < 205:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         action_result.add_data(resp_json)
@@ -114,10 +142,10 @@ class CritsConnector(BaseConnector):
             action_result.add_debug_data({'r_headers': r.headers})
 
         # There are just too many differences in the response to handle all of them in the same function
-        if ('json' in r.headers.get('Content-Type', '')):
+        if 'json' in r.headers.get('Content-Type', ''):
             return self._process_json_response(r, action_result)
 
-        if ('html' in r.headers.get('Content-Type', '')):
+        if 'html' in r.headers.get('Content-Type', ''):
             return self._process_html_response(r, action_result)
 
         # it's not an html or json, handle if it is a successfull empty reponse
@@ -130,8 +158,12 @@ class CritsConnector(BaseConnector):
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _make_rest_call(self, endpoint, action_result, params={}, data=None, headers={}, method="get", files=None, real_data=None):
+    def _make_rest_call(self, endpoint, action_result, params=None, data=None, headers=None, method="get", files=None, real_data=None):
         """ Returns 2 values, use RetVal """
+        if headers is None:
+            headers = {}
+        if params is None:
+            params = {}
         url = self._base_url + endpoint
         params.update(self._params)
 
@@ -141,18 +173,16 @@ class CritsConnector(BaseConnector):
             # Set the action_result status to error, the handler function will most probably return as is
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Unsupported method: {0}".format(method)), None)
         except Exception as e:
+            err_msg = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(str(e))), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(err_msg)), None)
 
         try:
             response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data)
         except Exception as e:
+            err_msg = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
-            return RetVal(action_result.set_status(
-                phantom.APP_ERROR, "Error connecting: {0}".format(
-                    str(e).replace(self._params['api_key'], '<api_key>')
-                )),
-                None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error connecting: {0}".format(err_msg.replace(self._params['api_key'], '<api_key>'))), None)
 
         return self._process_response(response, action_result)
 
@@ -160,37 +190,39 @@ class CritsConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(param))
         query = {}
-        endpoint = param.get(consts.CRITS_JSON_NEXT_PAGE)
+        endpoint = param.get(CRITS_JSON_NEXT_PAGE)
         # No page URI provided
         if not endpoint:
-            resource = param.get(consts.CRITS_JSON_RESOURCE)
+            resource = param.get(CRITS_JSON_RESOURCE)
             if not resource:
-                return action_result.set_status(phantom.APP_ERROR, "Parameter 'resource' is required")
-            query = param.get(consts.CRITS_JSON_QUERY)
-            if (query):
+                return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_RUN_QUERY_RESOURCE_REQUIRED)
+            query = param.get(CRITS_JSON_QUERY)
+            if query:
                 # The query is a json
                 try:
                     query = json.loads(query)
                 except Exception as e:
-                    return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
+                    err_msg = self._get_error_message_from_exception(e)
+                    return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(err_msg))
             else:
                 query = {}
             # Try for type casts
-            try:
-                if 'offset' in param:
-                    query['offset'] = int(param.get('offset'))
-                if 'limit' in param:
-                    query['limit'] = int(param.get('limit'))
-            except Exception as e:
-                # Since the type of these parameters is already numeric, we probably shouldn't end up here
-                return action_result.set_status(phantom.APP_ERROR, "Invalid offset or limit: Value must be numeric")
+            ret_val, offset = self._validate_integer(action_result, param.get('offset'), CRITS_OFFSET, allow_zero=True)
+            if phantom.is_fail(ret_val):
+                return action_result.get_status()
+            query['offset'] = offset
+
+            ret_val, limit = self._validate_integer(action_result, param.get('limit'), CRITS_LIMIT)
+            if phantom.is_fail(ret_val):
+                return action_result.get_status()
+            query['limit'] = limit
 
             endpoint = "/api/v1/{0}/".format(resource)
 
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result, params=query)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_data()
 
         total_count = response.get('meta', {}).get('total_count', 0)
@@ -198,7 +230,7 @@ class CritsConnector(BaseConnector):
 
         action_result.update_summary({'total_results': total_count})
         if next_page:
-            action_result.update_summary({'next_page': next_page})
+            action_result.update_summary({'next_page': next_page.replace(self._params['api_key'], '<api_key>')})
 
         objects = response.get('objects')
 
@@ -209,8 +241,8 @@ class CritsConnector(BaseConnector):
 
     def _get_resource(self, param):
 
-        resource = param[consts.CRITS_JSON_RESOURCE]
-        res_id = param[consts.CRITS_JSON_ID]
+        resource = param[CRITS_JSON_RESOURCE]
+        res_id = param[CRITS_JSON_ID]
 
         action_result = self.add_action_result(ActionResult(param))
 
@@ -219,61 +251,71 @@ class CritsConnector(BaseConnector):
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_data()
 
         action_result.add_data(response)
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully retrieved resource")
+        return action_result.set_status(phantom.APP_SUCCESS, CRITS_SUCC_GET_RESOURCE)
 
     def _update_resource(self, param):
 
         action_result = self.add_action_result(ActionResult(param))
 
-        resource = param[consts.CRITS_JSON_RESOURCE]
-        res_id = param[consts.CRITS_JSON_ID]
-        data_str = param[consts.CRITS_JSON_PATCH_DATA]
+        resource = param[CRITS_JSON_RESOURCE]
+        res_id = param[CRITS_JSON_ID]
+        data_str = param[CRITS_JSON_PATCH_DATA]
 
         try:
             data = json.loads(data_str)
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
+            err_msg = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(err_msg))
 
         endpoint = "/api/v1/{0}/{1}/".format(resource, res_id)
 
         ret_val, response = self._make_rest_call(endpoint, action_result, data=data, method="patch")
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_data()
 
         msg = response.get('message', '')
         if 'success' not in msg.lower():
-            return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(msg))
+            return action_result.set_status(phantom.APP_ERROR, "Unable to update resource: {0}".format(msg))
 
         action_result.add_data(response)
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully updated resource")
+        summary = action_result.update_summary({})
+        summary['resource_id'] = res_id
+
+        return action_result.set_status(phantom.APP_SUCCESS, CRITS_SUCC_UPDATE_RESOURCE)
 
     def _get_filename_filepath(self, action_result, vault_id):
-        try:
-            file_data = Vault.get_file_info(vault_id=vault_id)[0]
-        except:
-            return action_result.set_status(phantom.APP_ERROR, "No item could be found with vault id"), None, None
 
-        return phantom.APP_SUCCESS, file_data['name'], file_data['path']
+        try:
+            success, message, vault_info = phrules.vault_info(vault_id=vault_id)
+            vault_info = list(vault_info)[0]
+        except IndexError:
+            return action_result.set_status(phantom.APP_ERROR, VAULT_ERR_FILE_NOT_FOUND), None
+        except Exception:
+            return action_result.set_status(phantom.APP_ERROR, VAULT_ERR_INVALID_ID), None
+
+        vault_path = vault_info.get('path')
+        if vault_path is None:
+            return action_result.set_status(phantom.APP_ERROR, VAULT_ERR_PATH_NOT_FOUND)
+
+        return phantom.APP_SUCCESS, vault_info.get('name'), vault_path
 
     def _create_resource(self, param):
         action_result = self.add_action_result(ActionResult(param))
 
-        source = param[consts.CRITS_JSON_SOURCE]
-        resource = param[consts.CRITS_JSON_RESOURCE]
-        data_str = param.get(consts.CRITS_JSON_POST_DATA)
-        confidence = param.get(consts.CRITS_JSON_CONFIDENCE, 'low')
-        vault_id = param.get(consts.CRITS_JSON_FILE)
+        source = param[CRITS_JSON_SOURCE]
+        resource = param[CRITS_JSON_RESOURCE]
+        data_str = param.get(CRITS_JSON_POST_DATA)
+        confidence = param.get(CRITS_JSON_CONFIDENCE, 'low')
+        vault_id = param.get(CRITS_JSON_FILE)
 
-        data = {}
-        data['source'] = source
-        data['confidence'] = confidence
+        data = {'source': source, 'confidence': confidence}
 
         if vault_id:
             try:
@@ -288,7 +330,8 @@ class CritsConnector(BaseConnector):
                     'file_format': 'raw'
                 })
             except Exception as e:
-                return action_result.set_status(phantom.APP_ERROR, "Error reading file: {}".format(str(e)))
+                err_msg = self._get_error_message_from_exception(e)
+                return action_result.set_status(phantom.APP_ERROR, "Error reading file: {}".format(err_msg))
         else:
             files = None
 
@@ -297,13 +340,14 @@ class CritsConnector(BaseConnector):
                 add_data = json.loads(data_str)
                 data.update(add_data)
             except Exception as e:
-                return action_result.set_status(phantom.APP_ERROR, "Failed to load the query json. Error: {0}".format(str(e)))
+                err_msg = self._get_error_message_from_exception(e)
+                return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(err_msg))
 
         endpoint = "/api/v1/{0}/".format(resource)
 
         ret_val, response = self._make_rest_call(endpoint, action_result, real_data=data, method="post", files=files)
 
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
             return action_result.get_data()
 
         res_id = response.get('id')
@@ -312,12 +356,15 @@ class CritsConnector(BaseConnector):
 
         action_result.add_data(response)
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully created new resource")
+        summary = action_result.update_summary({})
+        summary['resource_id'] = res_id
+
+        return action_result.set_status(phantom.APP_SUCCESS, CRITS_SUCC_CREATE_RESOURCE)
 
     def _test_asset_connectivity(self, param):
 
         # Progress
-        self.save_progress(consts.CRITS_USING_BASE_URL, base_url=self._base_url)
+        self.save_progress(CRITS_USING_BASE_URL, base_url=self._base_url)
 
         # set the endpoint
         endpoint = '/api/v1/indicators/'
@@ -326,13 +373,13 @@ class CritsConnector(BaseConnector):
         action_result = ActionResult()
 
         # Progress message, since it is test connectivity, it pays to be verbose
-        self.save_progress(consts.CRITS_MSG_GET_INDICATORS_TEST)
+        self.save_progress(CRITS_MSG_GET_INDICATORS_TEST)
 
         # Make the rest endpoint call
         ret_val, response = self._make_rest_call(endpoint, action_result)
 
         # Process errors
-        if (phantom.is_fail(ret_val)):
+        if phantom.is_fail(ret_val):
 
             # Dump error messages in the log
             self.debug_print(action_result.get_message())
@@ -341,18 +388,18 @@ class CritsConnector(BaseConnector):
             self.set_status(phantom.APP_ERROR, action_result.get_message())
 
             # Append the message to display
-            self.append_to_message(consts.CRITS_ERR_CONNECTIVITY_TEST)
+            self.append_to_message(CRITS_ERR_CONNECTIVITY_TEST)
 
             # return error
             return phantom.APP_ERROR
 
         total_count = response.get('meta', {}).get('total_count')
 
-        if (total_count):
+        if total_count:
             self.save_progress("Got {0} indicator{1}".format(total_count, 's' if total_count > 1 else ''))
 
         # Set the status of the connector result
-        return self.set_status_save_progress(phantom.APP_SUCCESS, consts.CRITS_SUCC_CONNECTIVITY_TEST)
+        return self.set_status_save_progress(phantom.APP_SUCCESS, CRITS_SUCC_CONNECTIVITY_TEST)
 
     def handle_action(self, param):
         """Function that handles all the actions
@@ -370,15 +417,15 @@ class CritsConnector(BaseConnector):
 
         result = phantom.APP_SUCCESS
 
-        if (action == self.ACTION_ID_RUN_QUERY):
+        if action == self.ACTION_ID_RUN_QUERY:
             result = self._handle_run_query(param)
-        elif (action == self.ACTION_ID_GET_RESOURCE):
+        elif action == self.ACTION_ID_GET_RESOURCE:
             result = self._get_resource(param)
-        elif (action == self.ACTION_ID_UPDATE_RESOURCE):
+        elif action == self.ACTION_ID_UPDATE_RESOURCE:
             result = self._update_resource(param)
-        elif (action == self.ACTION_ID_CREATE_RESOURCE):
+        elif action == self.ACTION_ID_CREATE_RESOURCE:
             result = self._create_resource(param)
-        elif (action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY):
+        elif action == phantom.ACTION_ID_TEST_ASSET_CONNECTIVITY:
             result = self._test_asset_connectivity(param)
 
         return result
@@ -392,7 +439,7 @@ if __name__ == '__main__':
     pudb.set_trace()
 
     if (len(sys.argv) < 2):
-        print "No test json specified as input"
+        print("No test json specified as input")
         exit(0)
 
     with open(sys.argv[1]) as f:
@@ -403,6 +450,6 @@ if __name__ == '__main__':
         connector = CritsConnector()
         connector.print_progress_message = True
         ret_val = connector._handle_action(json.dumps(in_json), None)
-        print json.dumps(json.loads(ret_val), indent=4)
+        print(json.dumps(json.loads(ret_val), indent=4))
 
     exit(0)
