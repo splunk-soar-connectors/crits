@@ -11,7 +11,7 @@
     "product_name": "CRITs",
     "product_vendor": "MITRE",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.9.39220",
+    "min_phantom_version": "5.1.0",
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
@@ -19,7 +19,7 @@
     ],
     "logo": "logo_crits.svg",
     "logo_dark": "logo_crits_dark.svg",
-    "license": "Copyright (c) 2017-2021 Splunk Inc.",
+    "license": "Copyright (c) 2017-2022 Splunk Inc.",
     "configuration": {
         "url": {
             "description": "Device URL e.g. https://mycrits.contoso.com:8080",
@@ -436,13 +436,30 @@
             },
             "output": [
                 {
+                    "data_path": "action_result.data.*._id",
+                    "data_type": "string",
+                    "column_name": "ID",
+                    "column_order": 0,
+                    "contains": [
+                        "crits resource id"
+                    ]
+                },
+                {
                     "data_path": "action_result.status",
                     "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 1,
                     "example_values": [
                         "success",
                         "failed"
                     ]
                 },
+                {
+                    "data_path": "action_result.data.*.created",
+                    "data_type": "string",
+                    "column_name": "Created",
+                    "column_order": 2
+                },                
                 {
                     "data_path": "action_result.parameter.id",
                     "data_type": "string",
@@ -463,15 +480,6 @@
                     "example_values": [
                         "indicators",
                         "ips"
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*._id",
-                    "data_type": "string",
-                    "column_name": "ID",
-                    "column_order": 0,
-                    "contains": [
-                        "crits resource id"
                     ]
                 },
                 {
@@ -540,12 +548,6 @@
                 {
                     "data_path": "action_result.data.*.confidence.rating",
                     "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.created",
-                    "data_type": "string",
-                    "column_name": "Created",
-                    "column_order": 2
                 },
                 {
                     "data_path": "action_result.data.*.description",

@@ -15,17 +15,17 @@
 #
 #
 # Phantom imports
+import json
+
 import phantom.app as phantom
+import phantom.rules as phrules
+import requests
+from bs4 import BeautifulSoup
 from phantom.action_result import ActionResult
 from phantom.app import BaseConnector
-import phantom.rules as phrules
 
 # THIS Connector imports
 from crits_consts import *
-
-import json
-import requests
-from bs4 import BeautifulSoup
 
 
 class RetVal(tuple):
@@ -130,7 +130,8 @@ class CritsConnector(BaseConnector):
             resp_json = r.json()
         except Exception as e:
             self.save_progress('Cannot parse JSON')
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse response as JSON", self._get_error_message_from_exception(e)), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse response as JSON",
+                          self._get_error_message_from_exception(e)), None)
 
         if 200 <= r.status_code < 205:
             return RetVal(phantom.APP_SUCCESS, resp_json)
@@ -140,7 +141,9 @@ class CritsConnector(BaseConnector):
             message = resp_json['error_message']
         except:
             message = r.text.replace('{', '{{').replace('}', '}}')
-        return RetVal( action_result.set_status( phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+        return RetVal(action_result.set_status(phantom.APP_ERROR,
+                      "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)),
+                      resp_json)
 
     def _process_response(self, r, action_result):
 
@@ -191,7 +194,8 @@ class CritsConnector(BaseConnector):
         except Exception as e:
             err_msg = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error connecting: {0}".format(err_msg.replace(self._params['api_key'], '<api_key>'))), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR,
+                         "Error connecting: {0}".format(err_msg.replace(self._params['api_key'], '<api_key>'))), None)
 
         return self._process_response(response, action_result)
 
@@ -443,13 +447,14 @@ class CritsConnector(BaseConnector):
 if __name__ == '__main__':
 
     import sys
+
     import pudb
 
     pudb.set_trace()
 
     if (len(sys.argv) < 2):
         print("No test json specified as input")
-        exit(0)
+        sys.exit(0)
 
     with open(sys.argv[1]) as f:
         in_json = f.read()
@@ -461,4 +466,4 @@ if __name__ == '__main__':
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
 
-    exit(0)
+    sys.exit(0)
