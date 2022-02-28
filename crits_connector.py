@@ -1,6 +1,6 @@
 # File: crits_connector.py
 #
-# Copyright (c) 2017-2021 Splunk Inc.
+# Copyright (c) 2017-2022 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ class CritsConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(err_msg)), None)
 
         try:
-            response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data)
+            response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             err_msg = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is

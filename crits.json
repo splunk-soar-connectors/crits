@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "type": "siem",
     "main_module": "crits_connector.py",
-    "app_version": "2.0.6",
+    "app_version": "2.1.0",
     "utctime_updated": "2022-01-28T19:22:19.000000Z",
     "package_name": "phantom_crits",
     "product_name": "CRITs",

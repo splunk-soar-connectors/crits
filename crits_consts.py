@@ -1,6 +1,6 @@
 # File: crits_consts.py
 #
-# Copyright (c) 2017-2021 Splunk Inc.
+# Copyright (c) 2017-2022 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,3 +55,5 @@ CRITS_ERR_INVALID_PARAM = "Please provide a non-zero positive integer in the {pa
 VAULT_ERR_FILE_NOT_FOUND = "Vault file could not be found with supplied Vault ID"
 VAULT_ERR_INVALID_ID = "Vault ID not valid"
 VAULT_ERR_PATH_NOT_FOUND = "Could not find a path associated with the provided vault ID"
+
+DEFAULT_REQUEST_TIMEOUT = 30  # in seconds
