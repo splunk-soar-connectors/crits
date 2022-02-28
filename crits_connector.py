@@ -191,7 +191,7 @@ class CritsConnector(BaseConnector):
 
         try:
             response = request_func(
-                url, params=params, json=data, headers=headers, verify=self._verify, files=files,data=real_data, timeout=DEFAULT_REQUEST_TIMEOUT)
+                url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data, timeout=DEFAULT_REQUEST_TIMEOUT)
         except Exception as e:
             err_msg = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
