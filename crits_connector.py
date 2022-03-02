@@ -202,6 +202,7 @@ class CritsConnector(BaseConnector):
 
     def _handle_run_query(self, param):
 
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(param))
         query = {}
         endpoint = param.get(CRITS_JSON_NEXT_PAGE)
@@ -242,6 +243,7 @@ class CritsConnector(BaseConnector):
         total_count = response.get('meta', {}).get('total_count', 0)
         next_page = response.get('meta', {}).get('next')
 
+        self.save_progress("Successfully fetched results")
         action_result.update_summary({'total_results': total_count})
         if next_page:
             action_result.update_summary({'next_page': next_page.replace(self._params['api_key'], '<api_key>')})
@@ -255,6 +257,7 @@ class CritsConnector(BaseConnector):
 
     def _get_resource(self, param):
 
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         resource = param[CRITS_JSON_RESOURCE]
         res_id = param[CRITS_JSON_ID]
 
@@ -274,6 +277,7 @@ class CritsConnector(BaseConnector):
 
     def _update_resource(self, param):
 
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(param))
 
         resource = param[CRITS_JSON_RESOURCE]
@@ -295,6 +299,7 @@ class CritsConnector(BaseConnector):
 
         msg = response.get('message', '')
         if 'success' not in msg.lower():
+            self.save_progress("Unable to update resource")
             return action_result.set_status(phantom.APP_ERROR, "Unable to update resource: {0}".format(msg))
 
         action_result.add_data(response)
@@ -321,6 +326,8 @@ class CritsConnector(BaseConnector):
         return phantom.APP_SUCCESS, vault_info.get('name'), vault_path
 
     def _create_resource(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(param))
 
         source = param[CRITS_JSON_SOURCE]
@@ -366,6 +373,7 @@ class CritsConnector(BaseConnector):
 
         res_id = response.get('id')
         if not res_id:
+            self.save_progress("Unable to create resource")
             return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(response.get('message', '')))
 
         action_result.add_data(response)
