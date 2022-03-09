@@ -59,6 +59,10 @@ class CritsConnector(BaseConnector):
 
         self._verify = config.get(phantom.APP_JSON_VERIFY, False)
 
+        ret_val, self._timeout = self._validate_integer(self, config.get(CRITS_JSON_TIMEOUT, DEFAULT_REQUEST_TIMEOUT), CRITS_TIMEOUT)
+        if phantom.is_fail(ret_val):
+            return self.get_status()
+
         return phantom.APP_SUCCESS
 
     def _get_error_message_from_exception(self, e):
@@ -191,7 +195,7 @@ class CritsConnector(BaseConnector):
 
         try:
             response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data,
-                timeout=DEFAULT_REQUEST_TIMEOUT)
+                timeout=self._timeout)
         except Exception as e:
             err_msg = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is

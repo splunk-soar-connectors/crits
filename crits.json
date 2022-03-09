@@ -44,6 +44,12 @@
             "order": 3,
             "data_type": "password",
             "required": true
+        },
+        "timeout": {
+            "description": "Timeout (Default: 30 seconds)",
+            "data_type": "numeric",
+            "order": 4,
+            "default": 30
         }
     },
     "actions": [
