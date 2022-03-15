@@ -46,7 +46,7 @@
             "required": true
         },
         "timeout": {
-            "description": "Timeout (Default: 30 seconds)",
+            "description": "Request Timeout (Default: 30 seconds)",
             "data_type": "numeric",
             "order": 4,
             "default": 30
