@@ -46,6 +46,7 @@ class CritsConnector(BaseConnector):
         super(CritsConnector, self).__init__()
 
         self._params = None
+        self._timeout = None
 
     def initialize(self):
 
@@ -80,7 +81,7 @@ class CritsConnector(BaseConnector):
                 elif len(e.args) == 1:
                     error_msg = e.args[0]
         except:
-            pass
+            self.debug_print("Error occurred while retrieving exception information")
 
         return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
 
