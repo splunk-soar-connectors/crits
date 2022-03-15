@@ -1,2 +1,2 @@
 **Unreleased**
-* Add timeout argument in requests call [PAPP-23438]
+* Added 'timeout' asset configuration parameter [PAPP-23438]

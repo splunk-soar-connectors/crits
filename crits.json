@@ -194,35 +194,35 @@
                 {
                     "data_path": "action_result.data.*.activity.*.analyst",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "admin"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.description",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "Metal Claws"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.end_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.start_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
@@ -356,6 +356,35 @@
                 {
                     "data_path": "action_result.data.*.value",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.domain",
+                    "data_type": "string",
+                    "example_values": [
+                        "mobilalibey.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.analyst",
+                    "data_type": "string",
+                    "example_values": [
+                        "scott"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.watchlistEnabled",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.next_page",
+                    "data_type": "string",
+                    "example_values": [
+                        "/api/v1/indicators/?username=admin&api_key=<api_key>&limit=1&offset=2"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.total_results",
@@ -491,35 +520,35 @@
                 {
                     "data_path": "action_result.data.*.activity.*.analyst",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "admin"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.description",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "Metal Claws"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.end_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.start_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
@@ -562,21 +591,21 @@
                 {
                     "data_path": "action_result.data.*.filedata",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "c2FtcGxlIGZpbGUgbGluZTE="
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.filename",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "ph_vault_datafile"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.filetype",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "ASCII text, with no line terminators"
                     ]
                 },
@@ -595,14 +624,14 @@
                 {
                     "data_path": "action_result.data.*.md5",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "testtestcdf080d433600809testtest"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.mimetype",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "text/plain"
                     ]
                 },
@@ -613,7 +642,7 @@
                 {
                     "data_path": "action_result.data.*.name",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "this is me"
                     ]
                 },
@@ -656,21 +685,21 @@
                 {
                     "data_path": "action_result.data.*.sha1",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "testteste42e3d5a76a746e07aed942ctesttest"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.sha256",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "testtestb577f55b302b4485decb454ecf5748c286c745537317ff2etesttest"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.size",
                     "data_type": "numeric",
-                    "example_value": [
+                    "example_values": [
                         17
                     ]
                 },
@@ -697,7 +726,7 @@
                 {
                     "data_path": "action_result.data.*.ssdeep",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "3:MRx:8x"
                     ]
                 },
@@ -724,7 +753,7 @@
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "Successfully retrieved resource"
                     ]
                 },
@@ -1028,6 +1057,9 @@
                     "data_type": "string",
                     "contains": [
                         "vault id"
+                    ],
+                    "example_values": [
+                        "24468a2721dec748cea9373f3e1710ac2cb13237"
                     ]
                 },
                 {
