@@ -1,1 +1,2 @@
 **Unreleased**
+* Added 'timeout' asset configuration parameter [PAPP-23438]
