@@ -5,20 +5,21 @@
     "publisher": "Splunk",
     "type": "siem",
     "main_module": "crits_connector.py",
-    "app_version": "2.0.4",
-    "utctime_updated": "2021-06-11T01:49:21.000000Z",
+    "app_version": "2.1.0",
+    "utctime_updated": "2022-01-28T19:22:19.000000Z",
     "package_name": "phantom_crits",
     "product_name": "CRITs",
     "product_vendor": "MITRE",
     "product_version_regex": ".*",
-    "min_phantom_version": "4.9.39220",
+    "min_phantom_version": "5.1.0",
     "python_version": "3",
+    "fips_compliant": true,
     "latest_tested_versions": [
         "On prem, Version: 4-master"
     ],
     "logo": "logo_crits.svg",
     "logo_dark": "logo_crits_dark.svg",
-    "license": "Copyright (c) 2017-2021 Splunk Inc.",
+    "license": "Copyright (c) 2017-2022 Splunk Inc.",
     "configuration": {
         "url": {
             "description": "Device URL e.g. https://mycrits.contoso.com:8080",
@@ -43,6 +44,12 @@
             "order": 3,
             "data_type": "password",
             "required": true
+        },
+        "timeout": {
+            "description": "Request Timeout (Default: 30 seconds)",
+            "data_type": "numeric",
+            "order": 4,
+            "default": 30
         }
     },
     "actions": [
@@ -187,35 +194,35 @@
                 {
                     "data_path": "action_result.data.*.activity.*.analyst",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "admin"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.description",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "Metal Claws"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.end_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.start_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
@@ -349,6 +356,35 @@
                 {
                     "data_path": "action_result.data.*.value",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.domain",
+                    "data_type": "string",
+                    "example_values": [
+                        "mobilalibey.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.analyst",
+                    "data_type": "string",
+                    "example_values": [
+                        "scott"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.watchlistEnabled",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true,
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.next_page",
+                    "data_type": "string",
+                    "example_values": [
+                        "/api/v1/indicators/?username=admin&api_key=<api_key>&limit=1&offset=2"
+                    ]
                 },
                 {
                     "data_path": "action_result.summary.total_results",
@@ -435,12 +471,29 @@
             },
             "output": [
                 {
+                    "data_path": "action_result.data.*._id",
+                    "data_type": "string",
+                    "column_name": "ID",
+                    "column_order": 0,
+                    "contains": [
+                        "crits resource id"
+                    ]
+                },
+                {
                     "data_path": "action_result.status",
                     "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 1,
                     "example_values": [
                         "success",
                         "failed"
                     ]
+                },
+                {
+                    "data_path": "action_result.data.*.created",
+                    "data_type": "string",
+                    "column_name": "Created",
+                    "column_order": 2
                 },
                 {
                     "data_path": "action_result.parameter.id",
@@ -465,46 +518,37 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*._id",
-                    "data_type": "string",
-                    "column_name": "ID",
-                    "column_order": 0,
-                    "contains": [
-                        "crits resource id"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.activity.*.analyst",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "admin"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.description",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "Metal Claws"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.end_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.activity.*.start_date",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "2017-06-23 17:46:36.544000"
                     ]
                 },
@@ -541,33 +585,27 @@
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.created",
-                    "data_type": "string",
-                    "column_name": "Created",
-                    "column_order": 2
-                },
-                {
                     "data_path": "action_result.data.*.description",
                     "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.filedata",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "c2FtcGxlIGZpbGUgbGluZTE="
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.filename",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "ph_vault_datafile"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.filetype",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "ASCII text, with no line terminators"
                     ]
                 },
@@ -586,14 +624,14 @@
                 {
                     "data_path": "action_result.data.*.md5",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "testtestcdf080d433600809testtest"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.mimetype",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "text/plain"
                     ]
                 },
@@ -604,7 +642,7 @@
                 {
                     "data_path": "action_result.data.*.name",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "this is me"
                     ]
                 },
@@ -647,21 +685,21 @@
                 {
                     "data_path": "action_result.data.*.sha1",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "testteste42e3d5a76a746e07aed942ctesttest"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.sha256",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "testtestb577f55b302b4485decb454ecf5748c286c745537317ff2etesttest"
                     ]
                 },
                 {
                     "data_path": "action_result.data.*.size",
                     "data_type": "numeric",
-                    "example_value": [
+                    "example_values": [
                         17
                     ]
                 },
@@ -688,7 +726,7 @@
                 {
                     "data_path": "action_result.data.*.ssdeep",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "3:MRx:8x"
                     ]
                 },
@@ -715,7 +753,7 @@
                 {
                     "data_path": "action_result.message",
                     "data_type": "string",
-                    "example_value": [
+                    "example_values": [
                         "Successfully retrieved resource"
                     ]
                 },
@@ -1019,6 +1057,9 @@
                     "data_type": "string",
                     "contains": [
                         "vault id"
+                    ],
+                    "example_values": [
+                        "24468a2721dec748cea9373f3e1710ac2cb13237"
                     ]
                 },
                 {
@@ -1095,5 +1136,37 @@
             ],
             "versions": "EQ(*)"
         }
-    ]
+    ],
+    "pip_dependencies": {
+        "wheel": [
+            {
+                "module": "beautifulsoup4",
+                "input_file": "wheels/py3/beautifulsoup4-4.9.1-py3-none-any.whl"
+            },
+            {
+                "module": "certifi",
+                "input_file": "wheels/shared/certifi-2021.10.8-py2.py3-none-any.whl"
+            },
+            {
+                "module": "chardet",
+                "input_file": "wheels/shared/chardet-3.0.4-py2.py3-none-any.whl"
+            },
+            {
+                "module": "idna",
+                "input_file": "wheels/shared/idna-2.10-py2.py3-none-any.whl"
+            },
+            {
+                "module": "requests",
+                "input_file": "wheels/shared/requests-2.25.0-py2.py3-none-any.whl"
+            },
+            {
+                "module": "soupsieve",
+                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+            },
+            {
+                "module": "urllib3",
+                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+            }
+        ]
+    }
 }

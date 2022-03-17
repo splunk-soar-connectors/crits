@@ -1,22 +1,31 @@
-# --
 # File: crits_connector.py
-# Copyright (c) 2017-2021 Splunk Inc.
 #
-# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
-# without a valid written license from Splunk Inc. is PROHIBITED.
-
+# Copyright (c) 2017-2022 Splunk Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+# either express or implied. See the License for the specific language governing permissions
+# and limitations under the License.
+#
+#
 # Phantom imports
+import json
+
 import phantom.app as phantom
+import phantom.rules as phrules
+import requests
+from bs4 import BeautifulSoup
 from phantom.action_result import ActionResult
 from phantom.app import BaseConnector
-import phantom.rules as phrules
 
 # THIS Connector imports
 from crits_consts import *
-
-import json
-import requests
-from bs4 import BeautifulSoup
 
 
 class RetVal(tuple):
@@ -37,6 +46,7 @@ class CritsConnector(BaseConnector):
         super(CritsConnector, self).__init__()
 
         self._params = None
+        self._timeout = None
 
     def initialize(self):
 
@@ -49,6 +59,10 @@ class CritsConnector(BaseConnector):
         self._base_url = config[CRITS_JSON_BASE_URL].rstrip('/')
 
         self._verify = config.get(phantom.APP_JSON_VERIFY, False)
+
+        ret_val, self._timeout = self._validate_integer(self, config.get(CRITS_JSON_TIMEOUT, DEFAULT_REQUEST_TIMEOUT), CRITS_TIMEOUT)
+        if phantom.is_fail(ret_val):
+            return self.get_status()
 
         return phantom.APP_SUCCESS
 
@@ -67,7 +81,7 @@ class CritsConnector(BaseConnector):
                 elif len(e.args) == 1:
                     error_msg = e.args[0]
         except:
-            pass
+            self.debug_print("Error occurred while retrieving exception information")
 
         return "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
 
@@ -121,7 +135,8 @@ class CritsConnector(BaseConnector):
             resp_json = r.json()
         except Exception as e:
             self.save_progress('Cannot parse JSON')
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse response as JSON", self._get_error_message_from_exception(e)), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse response as JSON",
+                          self._get_error_message_from_exception(e)), None)
 
         if 200 <= r.status_code < 205:
             return RetVal(phantom.APP_SUCCESS, resp_json)
@@ -131,7 +146,9 @@ class CritsConnector(BaseConnector):
             message = resp_json['error_message']
         except:
             message = r.text.replace('{', '{{').replace('}', '}}')
-        return RetVal( action_result.set_status( phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+        return RetVal(action_result.set_status(phantom.APP_ERROR,
+                      "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)),
+                      resp_json)
 
     def _process_response(self, r, action_result):
 
@@ -178,16 +195,19 @@ class CritsConnector(BaseConnector):
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(err_msg)), None)
 
         try:
-            response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data)
+            response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data,
+                timeout=self._timeout)
         except Exception as e:
             err_msg = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error connecting: {0}".format(err_msg.replace(self._params['api_key'], '<api_key>'))), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR,
+                         "Error connecting: {0}".format(err_msg.replace(self._params['api_key'], '<api_key>'))), None)
 
         return self._process_response(response, action_result)
 
     def _handle_run_query(self, param):
 
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(param))
         query = {}
         endpoint = param.get(CRITS_JSON_NEXT_PAGE)
@@ -228,6 +248,7 @@ class CritsConnector(BaseConnector):
         total_count = response.get('meta', {}).get('total_count', 0)
         next_page = response.get('meta', {}).get('next')
 
+        self.save_progress("Successfully fetched results")
         action_result.update_summary({'total_results': total_count})
         if next_page:
             action_result.update_summary({'next_page': next_page.replace(self._params['api_key'], '<api_key>')})
@@ -241,6 +262,7 @@ class CritsConnector(BaseConnector):
 
     def _get_resource(self, param):
 
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         resource = param[CRITS_JSON_RESOURCE]
         res_id = param[CRITS_JSON_ID]
 
@@ -260,6 +282,7 @@ class CritsConnector(BaseConnector):
 
     def _update_resource(self, param):
 
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(param))
 
         resource = param[CRITS_JSON_RESOURCE]
@@ -281,6 +304,7 @@ class CritsConnector(BaseConnector):
 
         msg = response.get('message', '')
         if 'success' not in msg.lower():
+            self.save_progress("Unable to update resource")
             return action_result.set_status(phantom.APP_ERROR, "Unable to update resource: {0}".format(msg))
 
         action_result.add_data(response)
@@ -307,6 +331,8 @@ class CritsConnector(BaseConnector):
         return phantom.APP_SUCCESS, vault_info.get('name'), vault_path
 
     def _create_resource(self, param):
+
+        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
         action_result = self.add_action_result(ActionResult(param))
 
         source = param[CRITS_JSON_SOURCE]
@@ -352,6 +378,7 @@ class CritsConnector(BaseConnector):
 
         res_id = response.get('id')
         if not res_id:
+            self.save_progress("Unable to create resource")
             return action_result.set_status(phantom.APP_ERROR, "Unable to create resource: {0}".format(response.get('message', '')))
 
         action_result.add_data(response)
@@ -434,13 +461,14 @@ class CritsConnector(BaseConnector):
 if __name__ == '__main__':
 
     import sys
+
     import pudb
 
     pudb.set_trace()
 
     if (len(sys.argv) < 2):
         print("No test json specified as input")
-        exit(0)
+        sys.exit(0)
 
     with open(sys.argv[1]) as f:
         in_json = f.read()
@@ -452,4 +480,4 @@ if __name__ == '__main__':
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
 
-    exit(0)
+    sys.exit(0)
