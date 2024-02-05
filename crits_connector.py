@@ -190,18 +190,18 @@ class CritsConnector(BaseConnector):
             # Set the action_result status to error, the handler function will most probably return as is
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Unsupported method: {0}".format(method)), None)
         except Exception as e:
-            err_msg = self._get_error_message_from_exception(e)
+            error_message = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(err_msg)), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Handled exception: {0}".format(error_message)), None)
 
         try:
             response = request_func(url, params=params, json=data, headers=headers, verify=self._verify, files=files, data=real_data,
                 timeout=self._timeout)
         except Exception as e:
-            err_msg = self._get_error_message_from_exception(e)
+            error_message = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
             return RetVal(action_result.set_status(phantom.APP_ERROR,
-                         "Error connecting: {0}".format(err_msg.replace(self._params['api_key'], '<api_key>'))), None)
+                         "Error connecting: {0}".format(error_message.replace(self._params['api_key'], '<api_key>'))), None)
 
         return self._process_response(response, action_result)
 
@@ -222,8 +222,8 @@ class CritsConnector(BaseConnector):
                 try:
                     query = json.loads(query)
                 except Exception as e:
-                    err_msg = self._get_error_message_from_exception(e)
-                    return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(err_msg))
+                    error_message = self._get_error_message_from_exception(e)
+                    return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(error_message))
             else:
                 query = {}
             # Try for type casts
@@ -292,8 +292,8 @@ class CritsConnector(BaseConnector):
         try:
             data = json.loads(data_str)
         except Exception as e:
-            err_msg = self._get_error_message_from_exception(e)
-            return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(err_msg))
+            error_message = self._get_error_message_from_exception(e)
+            return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(error_message))
 
         endpoint = "/api/v1/{0}/{1}/".format(resource, res_id)
 
@@ -356,8 +356,8 @@ class CritsConnector(BaseConnector):
                     'file_format': 'raw'
                 })
             except Exception as e:
-                err_msg = self._get_error_message_from_exception(e)
-                return action_result.set_status(phantom.APP_ERROR, "Error reading file: {}".format(err_msg))
+                error_message = self._get_error_message_from_exception(e)
+                return action_result.set_status(phantom.APP_ERROR, "Error reading file: {}".format(error_message))
         else:
             files = None
 
@@ -366,8 +366,8 @@ class CritsConnector(BaseConnector):
                 add_data = json.loads(data_str)
                 data.update(add_data)
             except Exception as e:
-                err_msg = self._get_error_message_from_exception(e)
-                return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(err_msg))
+                error_message = self._get_error_message_from_exception(e)
+                return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_INVALID_QUERY_JSON.format(error_message))
 
         endpoint = "/api/v1/{0}/".format(resource)
 
