@@ -19,7 +19,7 @@
     ],
     "logo": "logo_crits.svg",
     "logo_dark": "logo_crits_dark.svg",
-    "license": "Copyright (c) 2017-2023 Splunk Inc.",
+    "license": "Copyright (c) 2017-2024 Splunk Inc.",
     "configuration": {
         "url": {
             "description": "Device URL e.g. https://mycrits.contoso.com:8080",
