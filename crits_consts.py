@@ -1,6 +1,6 @@
 # File: crits_consts.py
 #
-# Copyright (c) 2017-2024 Splunk Inc.
+# Copyright (c) 2017-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ CRITS_SUCC_UPDATE_RESOURCE = "Successfully updated resource"
 CRITS_JSON_ID = "id"
 CRITS_JSON_QUERY = "query"
 CRITS_JSON_SOURCE = "source"
-CRITS_JSON_API_KEY = "api_key"   # pragma: allowlist secret
+CRITS_JSON_API_KEY = "api_key"  # pragma: allowlist secret
 CRITS_JSON_BASE_URL = "url"
 CRITS_JSON_TIMEOUT = "timeout"
 CRITS_JSON_RESOURCE = "resource"
