@@ -5,14 +5,17 @@
     "publisher": "Splunk",
     "type": "siem",
     "main_module": "crits_connector.py",
-    "app_version": "2.1.2",
-    "utctime_updated": "2025-04-11T17:20:39.828225Z",
+    "app_version": "2.1.3",
+    "utctime_updated": "2025-07-30T17:43:03.818522Z",
     "package_name": "phantom_crits",
     "product_name": "CRITs",
     "product_vendor": "MITRE",
     "product_version_regex": ".*",
     "min_phantom_version": "5.1.0",
-    "python_version": ["3.9", "3.13"],
+    "python_version": [
+        "3.9",
+        "3.13"
+    ],
     "fips_compliant": true,
     "latest_tested_versions": [
         "On prem, Version: 4-master"
