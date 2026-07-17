@@ -98,13 +98,16 @@ class CritsConnector(BaseConnector):
         # Call the BaseConnectors init first
         super().__init__()
 
-        self._params = None
+        self._api_key = None
+        self._auth_header = None
         self._timeout = None
 
     def initialize(self):
         config = self.get_config()
 
-        self._params = {"username": config[CRITS_JSON_USERNAME], "api_key": config[CRITS_JSON_API_KEY]}
+        username = config[CRITS_JSON_USERNAME]
+        self._api_key = config[CRITS_JSON_API_KEY]
+        self._auth_header = f"ApiKey {username}:{self._api_key}"
 
         self._base_url = config[CRITS_JSON_BASE_URL].rstrip("/")
 
@@ -228,10 +231,12 @@ class CritsConnector(BaseConnector):
         """Returns 2 values, use RetVal"""
         if headers is None:
             headers = {}
+        else:
+            headers = dict(headers)
+        headers.setdefault("Authorization", self._auth_header)
         if params is None:
             params = {}
         url = f"{self._base_url}/{endpoint.lstrip('/')}"
-        params.update(self._params)
 
         try:
             request_func = getattr(requests, method)
@@ -252,7 +257,7 @@ class CritsConnector(BaseConnector):
             # Set the action_result status to error, the handler function will most probably return as is
             return RetVal(
                 action_result.set_status(
-                    phantom.APP_ERROR, "Error connecting: {}".format(error_message.replace(self._params["api_key"], "<api_key>"))
+                    phantom.APP_ERROR, "Error connecting: {}".format(error_message.replace(self._api_key, "<api_key>"))
                 ),
                 None,
             )
@@ -310,7 +315,7 @@ class CritsConnector(BaseConnector):
         self.save_progress("Successfully fetched results")
         action_result.update_summary({"total_results": total_count})
         if next_page:
-            action_result.update_summary({"next_page": next_page.replace(self._params["api_key"], "<api_key>")})
+            action_result.update_summary({"next_page": next_page.replace(self._api_key, "<api_key>")})
 
         objects = response.get("objects")
 
