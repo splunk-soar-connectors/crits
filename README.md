@@ -1,9 +1,9 @@
 # CRITs
 
-Publisher: Splunk \
-Connector Version: 2.1.4 \
-Product Vendor: MITRE \
-Product Name: CRITs \
+Publisher: Splunk <br>
+Connector Version: 2.1.4 <br>
+Product Vendor: MITRE <br>
+Product Name: CRITs <br>
 Minimum Product Version: 5.1.0
 
 This App supports various investigative actions on CRITs
@@ -32,17 +32,17 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity. This action logs into the device to check the connection and credentials \
-[run query](#action-run-query) - Run a search query on the CRITs device \
-[get resource](#action-get-resource) - Get a specific resource from CRITs \
-[update resource](#action-update-resource) - Update a specified resource \
+[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity. This action logs into the device to check the connection and credentials <br>
+[run query](#action-run-query) - Run a search query on the CRITs device <br>
+[get resource](#action-get-resource) - Get a specific resource from CRITs <br>
+[update resource](#action-update-resource) - Update a specified resource <br>
 [create resource](#action-create-resource) - Create a resource
 
 ## action: 'test connectivity'
 
 Validate the asset configuration for connectivity. This action logs into the device to check the connection and credentials
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -57,7 +57,7 @@ No Output
 
 Run a search query on the CRITs device
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 Query on CRITs is made up of multiple instances of key-value pairs, much like the parameters that are specified to an HTTP URL. To keep things simple, the action takes as input each parameter and its value to match as a JSON dictionary (in string form).<br>For example to search for an indicator of value <b>baddomain.com</b>:<ul><li>Set <b>resource</b> parameter to <b>indicators</b></li><li>The <b>query</b> parameter should be set to <b>{ "c-value": "baddomain.com" }</b></li></ul>To add more values to match just add the required key-value pairs to the <b>query</b> dictionary.<br>While orchestrating this action from the UI, typing the JSON dictionary should suffice.<br>While automating this action from a playbook, if you are creating a dictionary, then you will require to convert it into a JSON string using the json.loads(...) python function before passing it as the value to the <b>query</b> parameter.<br>If the next page URI is present, the other parameters will be ignored. If it isn't present, the resource to query on the field must be present.
@@ -133,7 +133,7 @@ summary.total_objects_successful | numeric | | 2 |
 
 Get a specific resource from CRITs
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -207,7 +207,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Update a specified resource
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 The <b>patch_data</b> field expects a json string that will be accepted by the action handler. More information can be found at <a href="https://github.com/crits/crits/wiki/Authenticated-API">this link</a>, in the sections about updating TLOs using PATCH.
@@ -241,7 +241,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Create a resource
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 All resources expect different fields, save a few common fields. The <b>post_data</b> field expects a JSON string. More information can be found at <a href="https://github.com/crits/crits/wiki/Authenticated-API">this link</a>. Each resource has a section outlining its specific fields.</br>If no confidence is specified, it will default to "low".<br> Additionally, you can upload files through the vault to be added to the resource. However, not all resource types will accept a file. If you attempt to add a file to a resource that doesn't accept one, then the action will still succeed and a resource will be created, but the attachment will not be added to it. By default, each file will be added as a 'raw' file. If you wish to change this, for example, to upload a zip file, you can set the 'file_format' attribute in the <b>post_data</b> to 'zip'.
@@ -280,7 +280,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -1,6 +1,6 @@
 # File: crits_connector.py
 #
-# Copyright (c) 2017-2025 Splunk Inc.
+# Copyright (c) 2017-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -256,9 +256,7 @@ class CritsConnector(BaseConnector):
             error_message = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
             return RetVal(
-                action_result.set_status(
-                    phantom.APP_ERROR, "Error connecting: {}".format(error_message.replace(self._api_key, "<api_key>"))
-                ),
+                action_result.set_status(phantom.APP_ERROR, "Error connecting: {}".format(error_message.replace(self._api_key, "<api_key>"))),
                 None,
             )
 
