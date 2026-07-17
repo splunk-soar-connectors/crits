@@ -16,6 +16,8 @@
 #
 # Phantom imports
 import json
+import re
+import urllib.parse
 
 import phantom.app as phantom
 import phantom.rules as phrules
@@ -28,6 +30,26 @@ from phantom.app import BaseConnector
 from crits_consts import *
 
 
+ALLOWED_RESOURCES = {
+    "actors",
+    "actoridentifiers",
+    "backdoors",
+    "campaigns",
+    "certificates",
+    "domains",
+    "emails",
+    "events",
+    "exploits",
+    "indicators",
+    "ips",
+    "pcaps",
+    "raw_data",
+    "samples",
+    "screenshots",
+    "targets",
+}
+
+
 class RetVal(tuple):
     def __new__(cls, val1, val2):
         return tuple.__new__(RetVal, (val1, val2))
@@ -38,6 +60,39 @@ class CritsConnector(BaseConnector):
     ACTION_ID_GET_RESOURCE = "get_resource"
     ACTION_ID_UPDATE_RESOURCE = "update_resource"
     ACTION_ID_CREATE_RESOURCE = "create_resource"
+
+    @staticmethod
+    def _validate_resource(action_result, resource):
+        if resource not in ALLOWED_RESOURCES:
+            return action_result.set_status(phantom.APP_ERROR, "Invalid CRITs resource")
+        return phantom.APP_SUCCESS
+
+    @staticmethod
+    def _validate_resource_id(action_result, resource_id):
+        if not re.fullmatch(r"[0-9a-f]{24}", resource_id):
+            return action_result.set_status(phantom.APP_ERROR, "Resource ID must be a 24-character lowercase hexadecimal value")
+        return phantom.APP_SUCCESS
+
+    @staticmethod
+    def _validate_next_page(action_result, next_page):
+        parsed = urllib.parse.urlsplit(next_page)
+        path_parts = parsed.path.split("/")
+        if (
+            parsed.scheme
+            or parsed.netloc
+            or parsed.fragment
+            or len(path_parts) < 5
+            or path_parts[:3] != ["", "api", "v1"]
+            or path_parts[3] not in ALLOWED_RESOURCES
+            or any(part == ".." for part in path_parts)
+        ):
+            return phantom.APP_ERROR, action_result.set_status(phantom.APP_ERROR, "Invalid CRITs next page URI")
+
+        query = urllib.parse.urlencode(
+            [(key, value) for key, value in urllib.parse.parse_qsl(parsed.query, keep_blank_values=True) if key not in {"username", "api_key"}],
+            doseq=True,
+        )
+        return phantom.APP_SUCCESS, urllib.parse.urlunsplit(("", "", parsed.path, query, ""))
 
     def __init__(self):
         # Call the BaseConnectors init first
@@ -175,7 +230,7 @@ class CritsConnector(BaseConnector):
             headers = {}
         if params is None:
             params = {}
-        url = self._base_url + endpoint
+        url = f"{self._base_url}/{endpoint.lstrip('/')}"
         params.update(self._params)
 
         try:
@@ -209,11 +264,17 @@ class CritsConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(param))
         query = {}
         endpoint = param.get(CRITS_JSON_NEXT_PAGE)
+        if endpoint:
+            ret_val, endpoint = self._validate_next_page(action_result, endpoint)
+            if phantom.is_fail(ret_val):
+                return action_result.get_status()
         # No page URI provided
         if not endpoint:
             resource = param.get(CRITS_JSON_RESOURCE)
             if not resource:
                 return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_RUN_QUERY_RESOURCE_REQUIRED)
+            if phantom.is_fail(self._validate_resource(action_result, resource)):
+                return action_result.get_status()
             query = param.get(CRITS_JSON_QUERY)
             if query:
                 # The query is a json
@@ -265,6 +326,11 @@ class CritsConnector(BaseConnector):
 
         action_result = self.add_action_result(ActionResult(param))
 
+        if phantom.is_fail(self._validate_resource(action_result, resource)):
+            return action_result.get_status()
+        if phantom.is_fail(self._validate_resource_id(action_result, res_id)):
+            return action_result.get_status()
+
         endpoint = f"/api/v1/{resource}/{res_id}/"
 
         # Make the rest endpoint call
@@ -284,6 +350,11 @@ class CritsConnector(BaseConnector):
         resource = param[CRITS_JSON_RESOURCE]
         res_id = param[CRITS_JSON_ID]
         data_str = param[CRITS_JSON_PATCH_DATA]
+
+        if phantom.is_fail(self._validate_resource(action_result, resource)):
+            return action_result.get_status()
+        if phantom.is_fail(self._validate_resource_id(action_result, res_id)):
+            return action_result.get_status()
 
         try:
             data = json.loads(data_str)
