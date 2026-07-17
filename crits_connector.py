@@ -53,7 +53,7 @@ class CritsConnector(BaseConnector):
 
         self._base_url = config[CRITS_JSON_BASE_URL].rstrip("/")
 
-        self._verify = config.get(phantom.APP_JSON_VERIFY, False)
+        self._verify = config.get(phantom.APP_JSON_VERIFY, True)
 
         ret_val, self._timeout = self._validate_integer(self, config.get(CRITS_JSON_TIMEOUT, DEFAULT_REQUEST_TIMEOUT), CRITS_TIMEOUT)
         if phantom.is_fail(ret_val):
