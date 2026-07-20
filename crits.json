@@ -19,7 +19,7 @@
     ],
     "logo": "logo_crits.svg",
     "logo_dark": "logo_crits_dark.svg",
-    "license": "Copyright (c) 2017-2025 Splunk Inc.",
+    "license": "Copyright (c) 2017-2026 Splunk Inc.",
     "configuration": {
         "url": {
             "description": "Device URL e.g. https://mycrits.contoso.com:8080",
@@ -31,7 +31,7 @@
             "data_type": "boolean",
             "description": "Verify server certificate",
             "order": 1,
-            "default": false
+            "default": true
         },
         "username": {
             "description": "Username",
@@ -1136,5 +1136,11 @@
             ],
             "versions": "EQ(*)"
         }
-    ]
+    ],
+    "pip39_dependencies": {
+        "wheel": []
+    },
+    "pip313_dependencies": {
+        "wheel": []
+    }
 }

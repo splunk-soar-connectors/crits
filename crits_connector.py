@@ -1,6 +1,6 @@
 # File: crits_connector.py
 #
-# Copyright (c) 2017-2025 Splunk Inc.
+# Copyright (c) 2017-2026 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 #
 # Phantom imports
 import json
+import re
+import urllib.parse
 
 import phantom.app as phantom
 import phantom.rules as phrules
@@ -26,6 +28,26 @@ from phantom.app import BaseConnector
 
 # THIS Connector imports
 from crits_consts import *
+
+
+ALLOWED_RESOURCES = {
+    "actors",
+    "actoridentifiers",
+    "backdoors",
+    "campaigns",
+    "certificates",
+    "domains",
+    "emails",
+    "events",
+    "exploits",
+    "indicators",
+    "ips",
+    "pcaps",
+    "raw_data",
+    "samples",
+    "screenshots",
+    "targets",
+}
 
 
 class RetVal(tuple):
@@ -39,21 +61,57 @@ class CritsConnector(BaseConnector):
     ACTION_ID_UPDATE_RESOURCE = "update_resource"
     ACTION_ID_CREATE_RESOURCE = "create_resource"
 
+    @staticmethod
+    def _validate_resource(action_result, resource):
+        if resource not in ALLOWED_RESOURCES:
+            return action_result.set_status(phantom.APP_ERROR, "Invalid CRITs resource")
+        return phantom.APP_SUCCESS
+
+    @staticmethod
+    def _validate_resource_id(action_result, resource_id):
+        if not re.fullmatch(r"[0-9a-f]{24}", resource_id):
+            return action_result.set_status(phantom.APP_ERROR, "Resource ID must be a 24-character lowercase hexadecimal value")
+        return phantom.APP_SUCCESS
+
+    @staticmethod
+    def _validate_next_page(action_result, next_page):
+        parsed = urllib.parse.urlsplit(next_page)
+        path_parts = parsed.path.split("/")
+        if (
+            parsed.scheme
+            or parsed.netloc
+            or parsed.fragment
+            or len(path_parts) < 5
+            or path_parts[:3] != ["", "api", "v1"]
+            or path_parts[3] not in ALLOWED_RESOURCES
+            or any(part == ".." for part in path_parts)
+        ):
+            return phantom.APP_ERROR, action_result.set_status(phantom.APP_ERROR, "Invalid CRITs next page URI")
+
+        query = urllib.parse.urlencode(
+            [(key, value) for key, value in urllib.parse.parse_qsl(parsed.query, keep_blank_values=True) if key not in {"username", "api_key"}],
+            doseq=True,
+        )
+        return phantom.APP_SUCCESS, urllib.parse.urlunsplit(("", "", parsed.path, query, ""))
+
     def __init__(self):
         # Call the BaseConnectors init first
         super().__init__()
 
-        self._params = None
+        self._api_key = None
+        self._auth_header = None
         self._timeout = None
 
     def initialize(self):
         config = self.get_config()
 
-        self._params = {"username": config[CRITS_JSON_USERNAME], "api_key": config[CRITS_JSON_API_KEY]}
+        username = config[CRITS_JSON_USERNAME]
+        self._api_key = config[CRITS_JSON_API_KEY]
+        self._auth_header = f"ApiKey {username}:{self._api_key}"
 
         self._base_url = config[CRITS_JSON_BASE_URL].rstrip("/")
 
-        self._verify = config.get(phantom.APP_JSON_VERIFY, False)
+        self._verify = config.get(phantom.APP_JSON_VERIFY, True)
 
         ret_val, self._timeout = self._validate_integer(self, config.get(CRITS_JSON_TIMEOUT, DEFAULT_REQUEST_TIMEOUT), CRITS_TIMEOUT)
         if phantom.is_fail(ret_val):
@@ -173,10 +231,12 @@ class CritsConnector(BaseConnector):
         """Returns 2 values, use RetVal"""
         if headers is None:
             headers = {}
+        else:
+            headers = dict(headers)
+        headers.setdefault("Authorization", self._auth_header)
         if params is None:
             params = {}
-        url = self._base_url + endpoint
-        params.update(self._params)
+        url = f"{self._base_url}/{endpoint.lstrip('/')}"
 
         try:
             request_func = getattr(requests, method)
@@ -196,9 +256,7 @@ class CritsConnector(BaseConnector):
             error_message = self._get_error_message_from_exception(e)
             # Set the action_result status to error, the handler function will most probably return as is
             return RetVal(
-                action_result.set_status(
-                    phantom.APP_ERROR, "Error connecting: {}".format(error_message.replace(self._params["api_key"], "<api_key>"))
-                ),
+                action_result.set_status(phantom.APP_ERROR, "Error connecting: {}".format(error_message.replace(self._api_key, "<api_key>"))),
                 None,
             )
 
@@ -209,11 +267,17 @@ class CritsConnector(BaseConnector):
         action_result = self.add_action_result(ActionResult(param))
         query = {}
         endpoint = param.get(CRITS_JSON_NEXT_PAGE)
+        if endpoint:
+            ret_val, endpoint = self._validate_next_page(action_result, endpoint)
+            if phantom.is_fail(ret_val):
+                return action_result.get_status()
         # No page URI provided
         if not endpoint:
             resource = param.get(CRITS_JSON_RESOURCE)
             if not resource:
                 return action_result.set_status(phantom.APP_ERROR, CRITS_ERR_RUN_QUERY_RESOURCE_REQUIRED)
+            if phantom.is_fail(self._validate_resource(action_result, resource)):
+                return action_result.get_status()
             query = param.get(CRITS_JSON_QUERY)
             if query:
                 # The query is a json
@@ -249,7 +313,7 @@ class CritsConnector(BaseConnector):
         self.save_progress("Successfully fetched results")
         action_result.update_summary({"total_results": total_count})
         if next_page:
-            action_result.update_summary({"next_page": next_page.replace(self._params["api_key"], "<api_key>")})
+            action_result.update_summary({"next_page": next_page.replace(self._api_key, "<api_key>")})
 
         objects = response.get("objects")
 
@@ -264,6 +328,11 @@ class CritsConnector(BaseConnector):
         res_id = param[CRITS_JSON_ID]
 
         action_result = self.add_action_result(ActionResult(param))
+
+        if phantom.is_fail(self._validate_resource(action_result, resource)):
+            return action_result.get_status()
+        if phantom.is_fail(self._validate_resource_id(action_result, res_id)):
+            return action_result.get_status()
 
         endpoint = f"/api/v1/{resource}/{res_id}/"
 
@@ -284,6 +353,11 @@ class CritsConnector(BaseConnector):
         resource = param[CRITS_JSON_RESOURCE]
         res_id = param[CRITS_JSON_ID]
         data_str = param[CRITS_JSON_PATCH_DATA]
+
+        if phantom.is_fail(self._validate_resource(action_result, resource)):
+            return action_result.get_status()
+        if phantom.is_fail(self._validate_resource_id(action_result, res_id)):
+            return action_result.get_status()
 
         try:
             data = json.loads(data_str)
