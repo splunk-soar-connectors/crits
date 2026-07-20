@@ -1,5 +1,1 @@
 **Unreleased**
-* Remove beautifulsoup4 from requirements.txt
-* Enabled TLS certificate verification by default.
-* Constrained resource identifiers and pagination URIs to supported CRITs API paths.
-* Moved CRITs credentials from URL query parameters to the supported authorization header.
