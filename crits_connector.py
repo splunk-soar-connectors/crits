@@ -81,6 +81,7 @@ class CritsConnector(BaseConnector):
             parsed.scheme
             or parsed.netloc
             or parsed.fragment
+            or "%" in parsed.path
             or len(path_parts) < 5
             or path_parts[:3] != ["", "api", "v1"]
             or path_parts[3] not in ALLOWED_RESOURCES
