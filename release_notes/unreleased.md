@@ -1,4 +1,1 @@
 **Unreleased**
-
-* Enforced the supported resource allowlist before create-resource API requests.
-* Rejected encoded path components in pagination URIs before API requests.
