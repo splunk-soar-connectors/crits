@@ -81,6 +81,7 @@ class CritsConnector(BaseConnector):
             parsed.scheme
             or parsed.netloc
             or parsed.fragment
+            or "%" in parsed.path
             or len(path_parts) < 5
             or path_parts[:3] != ["", "api", "v1"]
             or path_parts[3] not in ALLOWED_RESOURCES
@@ -405,6 +406,8 @@ class CritsConnector(BaseConnector):
 
         source = param[CRITS_JSON_SOURCE]
         resource = param[CRITS_JSON_RESOURCE]
+        if phantom.is_fail(self._validate_resource(action_result, resource)):
+            return action_result.get_status()
         data_str = param.get(CRITS_JSON_POST_DATA)
         confidence = param.get(CRITS_JSON_CONFIDENCE, "low")
         vault_id = param.get(CRITS_JSON_FILE)
