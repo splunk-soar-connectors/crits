@@ -1,8 +1,8 @@
 from soar_sdk.abstract import SOARClient
 from soar_sdk.exceptions import ActionFailure
 
-from src.asset import Asset
-from src.client import CritsClient, CritsClientError
+from .asset import Asset
+from .client import CritsClient, CritsClientError
 
 
 def run_test_connectivity(soar: SOARClient, asset: Asset) -> None:

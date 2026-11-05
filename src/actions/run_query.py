@@ -5,10 +5,10 @@ from soar_sdk.params import Param, Params
 from soar_sdk.abstract import SOARClient
 from soar_sdk.exceptions import ActionFailure
 
-from src.asset import Asset
-from src.client import CritsClient, CritsClientError, parse_json_object
-from src.actions._validators import ValidationError, validate_integer, validate_next_page, validate_resource
-from src.actions._results import failed_client_result
+from ..asset import Asset
+from ..client import CritsClient, CritsClientError, parse_json_object
+from ._validators import ValidationError, validate_integer, validate_next_page, validate_resource
+from ._results import failed_client_result
 
 
 class RunQueryParams(Params):

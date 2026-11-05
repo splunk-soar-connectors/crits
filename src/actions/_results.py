@@ -1,6 +1,6 @@
 from soar_sdk.action_results import ActionResult
 
-from src.client import CritsClientError
+from ..client import CritsClientError
 
 
 def failed_client_result(error: CritsClientError) -> ActionResult:

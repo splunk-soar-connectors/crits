@@ -1,14 +1,14 @@
 from soar_sdk.app import App
 
-from src.actions.create_resource import (
+from .create_resource import (
     CreateResourceOutput,
     CreateResourceParams,
     CreateResourceSummary,
     create_resource,
 )
-from src.actions.get_resource import GetResourceOutput, GetResourceParams, get_resource
-from src.actions.run_query import RunQueryOutput, RunQueryParams, RunQuerySummary, run_query
-from src.actions.update_resource import (
+from .get_resource import GetResourceOutput, GetResourceParams, get_resource
+from .run_query import RunQueryOutput, RunQueryParams, RunQuerySummary, run_query
+from .update_resource import (
     UpdateResourceOutput,
     UpdateResourceParams,
     UpdateResourceSummary,

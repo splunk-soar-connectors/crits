@@ -3,10 +3,10 @@ from soar_sdk.action_results import PermissiveActionOutput, OutputField
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Param, Params
 
-from src.asset import Asset
-from src.client import CritsClient, CritsClientError
-from src.actions._validators import ValidationError, validate_resource, validate_resource_id
-from src.actions._results import failed_client_result
+from ..asset import Asset
+from ..client import CritsClient, CritsClientError
+from ._validators import ValidationError, validate_resource, validate_resource_id
+from ._results import failed_client_result
 
 
 class GetResourceParams(Params):
