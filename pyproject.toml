@@ -3,10 +3,11 @@ name = "crits"
 version = "3.0.0"
 description = "This App supports various investigative actions on CRITs"
 license = "Copyright (c) 2017-2026 Splunk Inc."
-requires-python = ">=3.13, <3.16, !=3.14.*"
+requires-python = ">=3.13, <3.14"
 authors = [
 ]
 dependencies = [
+    "httpx==0.28.1",
     "splunk-soar-sdk==7.1.1",
 ]
 
@@ -35,14 +36,9 @@ environments = [
     "sys_platform == 'linux' and platform_machine == 'aarch64' and python_version == '3.13'",
     "sys_platform == 'darwin' and platform_machine == 'x86_64' and python_version == '3.13'",
     "sys_platform == 'darwin' and platform_machine == 'arm64' and python_version == '3.13'",
-    "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.15'",
-    "sys_platform == 'linux' and platform_machine == 'aarch64' and python_version == '3.15'",
-    "sys_platform == 'darwin' and platform_machine == 'x86_64' and python_version == '3.15'",
-    "sys_platform == 'darwin' and platform_machine == 'arm64' and python_version == '3.15'",
 ]
 required-environments = [
     "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.13'",
-    "sys_platform == 'linux' and platform_machine == 'x86_64' and python_version == '3.15'",
 ]
 
 [tool.ruff]
