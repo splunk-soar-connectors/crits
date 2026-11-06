@@ -1,4 +1,5 @@
 import httpx
+from pydantic import model_validator
 from soar_sdk.action_results import ActionOutput, ActionResult, OutputField, PermissiveActionOutput
 from soar_sdk.auth import StaticTokenAuth
 from soar_sdk.params import Param, Params
@@ -22,7 +23,14 @@ class RunQueryParams(Params):
     next_page: str | None = Param(description="Next page URI")
 
 
-class _ActivityOutput(PermissiveActionOutput):
+class _CRITsOutput(PermissiveActionOutput):
+    @model_validator(mode="before")
+    @classmethod
+    def _wrap_scalar_record(cls, value: object) -> object:
+        return value if isinstance(value, dict) else {"value": value}
+
+
+class _ActivityOutput(_CRITsOutput):
     analyst: str | None = None
     date: str | None = None
     description: str | None = None
@@ -30,7 +38,7 @@ class _ActivityOutput(PermissiveActionOutput):
     start_date: str | None = None
 
 
-class _CampaignOutput(PermissiveActionOutput):
+class _CampaignOutput(_CRITsOutput):
     analyst: str | None = None
     confidence: str | None = None
     date: str | None = None
@@ -38,17 +46,17 @@ class _CampaignOutput(PermissiveActionOutput):
     name: str | None = None
 
 
-class _ConfidenceOutput(PermissiveActionOutput):
+class _ConfidenceOutput(_CRITsOutput):
     analyst: str | None = None
     rating: str | None = None
 
 
-class _ImpactOutput(PermissiveActionOutput):
+class _ImpactOutput(_CRITsOutput):
     analyst: str | None = None
     rating: str | None = None
 
 
-class _RelationshipsOutput(PermissiveActionOutput):
+class _RelationshipsOutput(_CRITsOutput):
     analyst: str | None = None
     date: str | None = None
     rel_confidence: str | None = None
@@ -59,19 +67,19 @@ class _RelationshipsOutput(PermissiveActionOutput):
     value: str | None = None
 
 
-class _InstancesOutput(PermissiveActionOutput):
+class _InstancesOutput(_CRITsOutput):
     analyst: str | None = None
     date: str | None = None
     method: str | None = None
     reference: str | None = None
 
 
-class _SourceOutput(PermissiveActionOutput):
+class _SourceOutput(_CRITsOutput):
     instances: list[_InstancesOutput] | None = None
     name: str | None = None
 
 
-class RunQueryOutput(PermissiveActionOutput):
+class RunQueryOutput(_CRITsOutput):
     id: str | None = OutputField(cef_types=["crits resource id"], alias="_id")
     activity: list[_ActivityOutput] | None = None
     attack_types: str | None = None
@@ -99,7 +107,7 @@ class RunQuerySummary(ActionOutput):
     next_page: str | None = None
 
 
-def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> ActionResult:
+def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> list[RunQueryOutput]:
     try:
         if params.next_page:
             endpoint = validate_next_page(params.next_page)
@@ -197,14 +205,10 @@ def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> ActionR
     if next_page:
         message += f", Next page: {next_page}"
 
-    result = ActionResult(status=True, message=message)
-    result.set_summary(
-        RunQuerySummary(total_results=total_results, next_page=next_page).model_dump(
-            by_alias=True,
-            exclude_none=True,
-        )
-    )
+    soar.set_summary(RunQuerySummary(total_results=total_results, next_page=next_page))
+    soar.set_message(message)
     objects = response_data.get("objects") or []
-    for item in objects:
-        result.add_data(item)
-    return result
+    return [
+        RunQueryOutput.model_validate(item if isinstance(item, dict) else {"value": item})
+        for item in objects
+    ]
