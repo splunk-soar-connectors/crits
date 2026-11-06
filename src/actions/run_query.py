@@ -192,7 +192,11 @@ def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> list[Ru
     next_page = meta.get("next") if isinstance(meta, dict) else None
     if next_page and asset.api_key:
         next_page = str(next_page).replace(asset.api_key, "<api_key>")
-    soar.set_summary(RunQuerySummary(total_results=(meta.get("total_count", 0) if isinstance(meta, dict) else 0), next_page=next_page))
-    soar.set_message("Executed query")
+    total_results = meta.get("total_count", 0) if isinstance(meta, dict) else 0
+    soar.set_summary(RunQuerySummary(total_results=total_results, next_page=next_page))
+    message = f"Total results: {total_results}"
+    if next_page:
+        message += f", Next page: {next_page}"
+    soar.set_message(message)
     objects = response_data.get("objects") or []
     return [RunQueryOutput.model_validate(item) for item in objects]
