@@ -199,4 +199,7 @@ def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> list[Ru
         message += f", Next page: {next_page}"
     soar.set_message(message)
     objects = response_data.get("objects") or []
-    return [RunQueryOutput.model_validate(item) for item in objects]
+    return [
+        RunQueryOutput.model_validate(item if isinstance(item, dict) else {"value": item})
+        for item in objects
+    ]
