@@ -1,13 +1,14 @@
 import httpx
 from pydantic import model_validator
 from soar_sdk.action_results import ActionOutput, ActionResult, OutputField, PermissiveActionOutput
-from soar_sdk.auth import StaticTokenAuth
 from soar_sdk.params import Param, Params
 from soar_sdk.abstract import SOARClient
 from soar_sdk.exceptions import ActionFailure
 
 from ..asset import Asset
-from .utils import parse_json_object, redact, redact_data, validate_integer, validate_next_page, validate_resource, validate_timeout
+from ..auth import get_auth_client
+from ..validators import parse_json_object, validate_integer, validate_next_page, validate_resource, validate_timeout
+from .crits_client_utils import parse_crits_response, redact
 
 
 class RunQueryParams(Params):
@@ -107,6 +108,19 @@ class RunQuerySummary(ActionOutput):
     next_page: str | None = None
 
 
+def _set_query_summary(response_data: dict, api_key: str, soar: SOARClient) -> None:
+    meta = response_data.get("meta") or {}
+    next_page = meta.get("next") if isinstance(meta, dict) else None
+    if next_page and api_key:
+        next_page = str(next_page).replace(api_key, "<api_key>")
+    total_results = meta.get("total_count", 0) if isinstance(meta, dict) else 0
+    message = f"Total results: {total_results}"
+    if next_page:
+        message += f", Next page: {next_page}"
+    soar.set_summary(RunQuerySummary(total_results=total_results, next_page=next_page))
+    soar.set_message(message)
+
+
 def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> list[RunQueryOutput]:
     try:
         if params.next_page:
@@ -127,86 +141,25 @@ def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> list[Ru
         timeout = validate_timeout(asset.timeout)
     except ValueError as error:
         raise ActionFailure(str(error)) from error
-    
-    auth = StaticTokenAuth(f"{asset.username}:{asset.api_key}", token_type="ApiKey")
-    client = httpx.Client(
-        auth=auth,
-        verify=asset.verify_server_cert,
-        timeout=timeout,
-        follow_redirects=True,
-    )
 
+    api_key = asset.api_key
+    client = get_auth_client(asset.username, api_key, asset.verify_server_cert, timeout)
     try:
         response = client.get(
             f"{asset.url.rstrip('/')}/{endpoint.lstrip('/')}",
             params={key: value for key, value in (query or {}).items() if value is not None},
         )
     except httpx.HTTPError as error:
-        raise ActionFailure(f"Error connecting: {redact(str(error), asset.api_key)}") from error
+        raise ActionFailure(f"Error connecting: {redact(str(error), api_key)}") from error
     finally:
         client.close()
-
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as error:
-        response = error.response
-        content_type = response.headers.get("Content-Type", "")
-        if "json" not in content_type:
-            message = "Can't process response from server. Status Code: {} Data from server: {}".format(
-                response.status_code, response.text.replace("{", "{{").replace("}", "}}")
-            )
-            raise ActionFailure(redact(message, asset.api_key)) from error
-        try:
-            response_data = response.json()
-        except ValueError as parse_error:
-            raise ActionFailure(
-                f"Unable to parse response as JSON: {redact(str(parse_error), asset.api_key)}"
-            ) from parse_error
-        message = response_data.get("error_message") if isinstance(response_data, dict) else None
-        if not message:
-            message = response.text.replace("{", "{{").replace("}", "}}")
-        result = ActionResult(
-            status=False,
-            message=redact(f"Error from server, Status Code: {response.status_code} data returned: {message}", asset.api_key),
-        )
-        result.add_data(redact_data(response_data, asset.api_key))
-        return result  # type: ignore[return-value]
-
-    if "json" not in response.headers.get("Content-Type", ""):
-        if 200 <= response.status_code < 205 and not response.text:
-            raise ActionFailure("The server returned an empty response")
-        message = "Can't process response from server. Status Code: {} Data from server: {}".format(
-            response.status_code, response.text.replace("{", "{{").replace("}", "}}")
-        )
-        raise ActionFailure(redact(message, asset.api_key))
-    try:
-        response_data = response.json()
-    except ValueError as error:
-        raise ActionFailure(f"Unable to parse response as JSON: {redact(str(error), asset.api_key)}") from error
-    if response.status_code == 205:  # Preserve the legacy 200-204 success range.
-        message = response_data.get("error_message") if isinstance(response_data, dict) else None
-        if not message:
-            message = response.text.replace("{", "{{").replace("}", "}}")
-        result = ActionResult(
-            status=False,
-            message=redact(f"Error from server, Status Code: {response.status_code} data returned: {message}", asset.api_key),
-        )
-        result.add_data(redact_data(response_data, asset.api_key))
-        return result  # type: ignore[return-value]
+    response_data = parse_crits_response(response, api_key)
+    if isinstance(response_data, ActionResult):
+        return response_data  # type: ignore[return-value]
 
     if not isinstance(response_data, dict):
         raise ActionFailure("CRITs query response was not a JSON object")
-    meta = response_data.get("meta") or {}
-    next_page = meta.get("next") if isinstance(meta, dict) else None
-    if next_page and asset.api_key:
-        next_page = str(next_page).replace(asset.api_key, "<api_key>")
-    total_results = meta.get("total_count", 0) if isinstance(meta, dict) else 0
-    message = f"Total results: {total_results}"
-    if next_page:
-        message += f", Next page: {next_page}"
-
-    soar.set_summary(RunQuerySummary(total_results=total_results, next_page=next_page))
-    soar.set_message(message)
+    _set_query_summary(response_data, api_key, soar)
     objects = response_data.get("objects") or []
     return [
         RunQueryOutput.model_validate(item if isinstance(item, dict) else {"value": item})

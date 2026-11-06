@@ -67,6 +67,39 @@ def validate_next_page(next_page: str) -> str:
     return urllib.parse.urlunsplit(("", "", parsed.path, query, ""))
 
 
+def validate_request_endpoint(endpoint: str) -> str:
+    path = endpoint if endpoint.startswith("/") else f"/{endpoint}"
+    parsed = urllib.parse.urlsplit(path)
+    path_parts = parsed.path.split("/")
+    if (
+        parsed.scheme
+        or parsed.netloc
+        or parsed.query
+        or parsed.fragment
+        or "%" in parsed.path
+        or path_parts[:3] != ["", "api", "v1"]
+        or any(part in {".", ".."} for part in path_parts)
+    ):
+        raise ValueError("Endpoint must be a relative CRITs API path under /api/v1/")
+    return parsed.path
+
+
+def validate_http_method(method: str) -> str:
+    normalized_method = method.strip().upper()
+    if normalized_method not in {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}:
+        raise ValueError(f"Unsupported HTTP method: {method}")
+    return normalized_method
+
+
+def parse_query_parameters(value: str | None) -> dict[str, Any] | list[tuple[str, str]]:
+    if not value:
+        return {}
+    query = value.strip()
+    if query.startswith("{"):
+        return parse_json_object(query, "query_parameters")
+    return urllib.parse.parse_qsl(query.removeprefix("?"), keep_blank_values=True)
+
+
 def parse_json_object(value: str, field: str) -> dict[str, Any]:
     try:
         parsed = json.loads(value)
@@ -90,17 +123,3 @@ def validate_timeout(timeout: float) -> int:
     if timeout_value == 0:
         raise ValueError("Please provide a non-zero positive integer in the 'timeout' action parameter")
     return timeout_value
-
-
-def redact(value: str, secret: str) -> str:
-    return value.replace(secret, "<api_key>") if secret else value
-
-
-def redact_data(value: Any, secret: str) -> Any:
-    if isinstance(value, str):
-        return redact(value, secret)
-    if isinstance(value, list):
-        return [redact_data(item, secret) for item in value]
-    if isinstance(value, dict):
-        return {redact(key, secret): redact_data(item, secret) for key, item in value.items()}
-    return value

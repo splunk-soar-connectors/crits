@@ -1,5 +1,6 @@
 from soar_sdk.app import App
 
+from .make_request import make_request
 from .create_resource import (
     CreateResourceOutput,
     CreateResourceParams,
@@ -17,6 +18,7 @@ from .update_resource import (
 
 
 def register_actions(app: App) -> App:
+    app.make_request()(make_request)
     app.register_action(
         action=run_query,
         name="run query",
