@@ -99,7 +99,7 @@ class RunQuerySummary(ActionOutput):
     next_page: str | None = None
 
 
-def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> list[RunQueryOutput]:
+def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> ActionResult:
     try:
         if params.next_page:
             endpoint = validate_next_page(params.next_page)
@@ -193,13 +193,18 @@ def run_query(params: RunQueryParams, soar: SOARClient, asset: Asset) -> list[Ru
     if next_page and asset.api_key:
         next_page = str(next_page).replace(asset.api_key, "<api_key>")
     total_results = meta.get("total_count", 0) if isinstance(meta, dict) else 0
-    soar.set_summary(RunQuerySummary(total_results=total_results, next_page=next_page))
     message = f"Total results: {total_results}"
     if next_page:
         message += f", Next page: {next_page}"
-    soar.set_message(message)
+
+    result = ActionResult(status=True, message=message)
+    result.set_summary(
+        RunQuerySummary(total_results=total_results, next_page=next_page).model_dump(
+            by_alias=True,
+            exclude_none=True,
+        )
+    )
     objects = response_data.get("objects") or []
-    return [
-        RunQueryOutput.model_validate(item if isinstance(item, dict) else {"value": item})
-        for item in objects
-    ]
+    for item in objects:
+        result.add_data(item)
+    return result
