@@ -1,14 +1,14 @@
 from typing import Any
 
+import httpx
 from soar_sdk.abstract import SOARClient
-from soar_sdk.action_results import ActionOutput, OutputField, PermissiveActionOutput
+from soar_sdk.action_results import ActionOutput, ActionResult, OutputField, PermissiveActionOutput
+from soar_sdk.auth import StaticTokenAuth
 from soar_sdk.exceptions import ActionFailure
 from soar_sdk.params import Param, Params
 
 from ..asset import Asset
-from ..client import CritsClient, CritsClientError, parse_json_object
-from ._validators import ValidationError, validate_resource
-from ._results import failed_client_result
+from .utils import parse_json_object, redact, redact_data, validate_resource, validate_timeout
 
 
 class CreateResourceParams(Params):
@@ -44,50 +44,113 @@ def _get_vault_file(soar: SOARClient, vault_id: str) -> tuple[str, Any]:
 
 
 def create_resource(params: CreateResourceParams, soar: SOARClient, asset: Asset) -> list[CreateResourceOutput]:
-    client: CritsClient | None = None
-    file_data = None
     try:
         resource = validate_resource(params.resource)
-        data: dict[str, Any] = {
-            "source": params.source,
-            "confidence": "low" if params.confidence is None else params.confidence,
-        }
-        extra_data = parse_json_object(params.post_data, "post_data") if params.post_data else {}
-
-        upload = None
-        if params.vault_id:
-            file_name, file_data = _get_vault_file(soar, params.vault_id)
-            upload = {"filedata": (file_name, file_data)}
-            data.update({"upload_type": "file", "file_format": "raw"})
-
-        data.update(extra_data)
-        client = CritsClient(asset.url, asset.username, asset.api_key, asset.verify_server_cert, asset.timeout)
-        response = client.request(f"/api/v1/{resource}/", method="post", form_data=data, files=upload)
-    except CritsClientError as error:
-        if error.has_response_data:
-            return failed_client_result(error)  # type: ignore[return-value]
-        raise ActionFailure(str(error)) from error
-    except ValidationError as error:
-        raise ActionFailure(str(error)) from error
     except ValueError as error:
         raise ActionFailure(str(error)) from error
-    except Exception as error:
-        raise ActionFailure(f"Error reading file: {error}") from error
+    try:
+        extra_data = parse_json_object(params.post_data, "post_data") if params.post_data else {}
+    except ValueError as error:
+        raise ActionFailure(redact(str(error), asset.api_key)) from error
+
+    try:
+        timeout = validate_timeout(asset.timeout)
+    except ValueError as error:
+        raise ActionFailure(str(error)) from error
+
+    data: dict[str, Any] = {
+        "source": params.source,
+        "confidence": "low" if params.confidence is None else params.confidence,
+    }
+    upload = None
+    file_data = None
+    if params.vault_id:
+        try:
+            file_name, file_data = _get_vault_file(soar, params.vault_id)
+        except ValueError as error:
+            raise ActionFailure(str(error)) from error
+        upload = {"filedata": (file_name, file_data)}
+        data.update({"upload_type": "file", "file_format": "raw"})
+    data.update(extra_data)
+
+    auth = StaticTokenAuth(f"{asset.username}:{asset.api_key}", token_type="ApiKey")
+    client = None
+    try:
+        client = httpx.Client(
+            auth=auth,
+            verify=asset.verify_server_cert,
+            timeout=timeout,
+            follow_redirects=True,
+        )
+        response = client.post(
+            f"{asset.url.rstrip('/')}/api/v1/{resource}/",
+            data=data,
+            files=upload,
+        )
+    except httpx.HTTPError as error:
+        raise ActionFailure(f"Error connecting: {redact(str(error), asset.api_key)}") from error
     finally:
         if client is not None:
             client.close()
         if file_data is not None:
             file_data.close()
 
-    resource_id = response.get("id") if isinstance(response, dict) else None
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as error:
+        response = error.response
+        content_type = response.headers.get("Content-Type", "")
+        if "json" not in content_type:
+            message = "Can't process response from server. Status Code: {} Data from server: {}".format(
+                response.status_code, response.text.replace("{", "{{").replace("}", "}}")
+            )
+            raise ActionFailure(redact(message, asset.api_key)) from error
+        try:
+            response_data = response.json()
+        except ValueError as parse_error:
+            raise ActionFailure(
+                f"Unable to parse response as JSON: {redact(str(parse_error), asset.api_key)}"
+            ) from parse_error
+        message = response_data.get("error_message") if isinstance(response_data, dict) else None
+        if not message:
+            message = response.text.replace("{", "{{").replace("}", "}}")
+        result = ActionResult(
+            status=False,
+            message=redact(f"Error from server, Status Code: {response.status_code} data returned: {message}", asset.api_key),
+        )
+        result.add_data(redact_data(response_data, asset.api_key))
+        return result  # type: ignore[return-value]
+
+    if "json" not in response.headers.get("Content-Type", ""):
+        if 200 <= response.status_code < 205 and not response.text:
+            raise ActionFailure("The server returned an empty response")
+        message = "Can't process response from server. Status Code: {} Data from server: {}".format(
+            response.status_code, response.text.replace("{", "{{").replace("}", "}}")
+        )
+        raise ActionFailure(redact(message, asset.api_key))
+    try:
+        response_data = response.json()
+    except ValueError as error:
+        raise ActionFailure(f"Unable to parse response as JSON: {redact(str(error), asset.api_key)}") from error
+    if response.status_code == 205:  # Preserve the legacy 200-204 success range.
+        message = response_data.get("error_message") if isinstance(response_data, dict) else None
+        if not message:
+            message = response.text.replace("{", "{{").replace("}", "}}")
+        result = ActionResult(
+            status=False,
+            message=redact(f"Error from server, Status Code: {response.status_code} data returned: {message}", asset.api_key),
+        )
+        result.add_data(redact_data(response_data, asset.api_key))
+        return result  # type: ignore[return-value]
+
+    resource_id = response_data.get("id") if isinstance(response_data, dict) else None
     if not resource_id:
-        message = response.get("message", "") if isinstance(response, dict) else ""
-        if asset.api_key:
-            message = str(message).replace(asset.api_key, "<api_key>")
+        message = response_data.get("message", "") if isinstance(response_data, dict) else ""
+        message = redact(str(message), asset.api_key)
         raise ActionFailure(f"Unable to create resource: {message}")
     soar.set_summary(CreateResourceSummary(resource_id=str(resource_id)))
     soar.set_message("Successfully created new resource")
-    return [CreateResourceOutput.model_validate(response)]
+    return [CreateResourceOutput.model_validate(response_data)]
 
 
 class CreateResourceSummary(ActionOutput):

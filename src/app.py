@@ -15,8 +15,8 @@ from soar_sdk.abstract import SOARClient
 from soar_sdk.app import App
 
 from .actions import register_actions
+from .actions.test_connectivity import run_test_connectivity
 from .asset import Asset
-from .test_connectivity import run_test_connectivity
 
 
 def create_crits_app() -> App:
