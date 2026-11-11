@@ -1,6 +1,6 @@
 [project]
 name = "crits"
-version = "3.0.0"
+version = "4.0.0"
 description = "This App supports various investigative actions on CRITs"
 license = "Copyright (c) 2017-2026 Splunk Inc."
 requires-python = ">=3.13, <3.14"
