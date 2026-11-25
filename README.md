@@ -1,7 +1,7 @@
 # CRITs
 
 Publisher: Splunk <br>
-Connector Version: 4.0.0 <br>
+Connector Version: 4.0.1 <br>
 Product Vendor: MITRE <br>
 Product Name: CRITs <br>
 Minimum Product Version: 7.0.0
